@@ -25,7 +25,7 @@ func main() {
 			fmt.Printf("Error: %v.\n", err)
 			return
 		}
-		fmt.Println("Your NWS office:", office)
+		fmt.Printf("Your NWS office is %s:\n", office)
 		fmt.Println("Add this to the 'office' field in config.toml")
 		return
 	}
