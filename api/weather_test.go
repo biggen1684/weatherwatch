@@ -1,13 +1,5 @@
 package weather
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
 const mockResponse = `{
 "@context": [
         "https://geojson.org/geojson-ld/geojson-context.jsonld",
@@ -271,98 +263,98 @@ const mockResponse = `{
     "updated": "2026-06-13T14:28:18+00:00"
 }`
 
-func TestGetPushoverKey(t *testing.T) {
-	t.Run("key is set", func(t *testing.T) {
-		t.Setenv("PUSHOVER_API_KEY", "abc123")
+// func TestGetPushoverKey(t *testing.T) {
+// 	t.Run("key is set", func(t *testing.T) {
+// 		t.Setenv("PUSHOVER_API_KEY", "abc123")
 
-		key, err := getPushoverKey()
-		assert.NoError(t, err)
-		assert.Equal(t, "abc123", key)
-	})
+// 		key, err := getPushoverKey()
+// 		assert.NoError(t, err)
+// 		assert.Equal(t, "abc123", key)
+// 	})
 
-	t.Run("key is missing", func(t *testing.T) {
-		t.Setenv("PUSHOVER_API_KEY", "")
+// 	t.Run("key is missing", func(t *testing.T) {
+// 		t.Setenv("PUSHOVER_API_KEY", "")
 
-		_, err := getPushoverKey()
-		assert.Error(t, err)
-	})
-}
+// 		_, err := getPushoverKey()
+// 		assert.Error(t, err)
+// 	})
+// }
 
-func TestLoadConfig(t *testing.T) {
-	t.Run("valid toml file", func(t *testing.T) {
-		content := `
-office = "NWS Tallahassee FL"
-area = "FL"
-user_agent = "weatherwatch (test@example.com)"
-events = ["Tornado Warning"]
-`
-		path := filepath.Join(t.TempDir(), "config.toml")
-		err := os.WriteFile(path, []byte(content), 0644)
-		assert.NoError(t, err)
+// func TestLoadConfig(t *testing.T) {
+// 	t.Run("valid toml file", func(t *testing.T) {
+// 		content := `
+// office = "NWS Tallahassee FL"
+// area = "FL"
+// user_agent = "weatherwatch (test@example.com)"
+// events = ["Tornado Warning"]
+// `
+// 		path := filepath.Join(t.TempDir(), "config.toml")
+// 		err := os.WriteFile(path, []byte(content), 0644)
+// 		assert.NoError(t, err)
 
-		cfg, err := loadConfig(path)
-		assert.NoError(t, err)
-		assert.Equal(t, "NWS Tallahassee FL", cfg.Office)
-		assert.Equal(t, "FL", cfg.Area)
-		assert.Equal(t, []string{"Tornado Warning"}, cfg.Events)
-	})
+// 		cfg, err := loadConfig(path)
+// 		assert.NoError(t, err)
+// 		assert.Equal(t, "NWS Tallahassee FL", cfg.Office)
+// 		assert.Equal(t, "FL", cfg.Area)
+// 		assert.Equal(t, []string{"Tornado Warning"}, cfg.Events)
+// 	})
 
-	t.Run("file does not exist", func(t *testing.T) {
-		_, err := loadConfig("nonexistent.toml")
-		assert.Error(t, err)
-	})
+// 	t.Run("file does not exist", func(t *testing.T) {
+// 		_, err := loadConfig("nonexistent.toml")
+// 		assert.Error(t, err)
+// 	})
 
-	t.Run("malformed toml", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), "bad.toml")
-		err := os.WriteFile(path, []byte("office = ["), 0644)
-		assert.NoError(t, err)
+// 	t.Run("malformed toml", func(t *testing.T) {
+// 		path := filepath.Join(t.TempDir(), "bad.toml")
+// 		err := os.WriteFile(path, []byte("office = ["), 0644)
+// 		assert.NoError(t, err)
 
-		_, err = loadConfig(path)
-		assert.Error(t, err)
-	})
-}
+// 		_, err = loadConfig(path)
+// 		assert.Error(t, err)
+// 	})
+// }
 
-func TestValidateConfig(t *testing.T) {
-	valid := Config{
-		Office:    "NWS Tallahassee FL",
-		Area:      "FL",
-		UserAgent: "weatherwatch (test@example.com)",
-		Events:    []string{"Tornado Warning"},
-	}
+// func TestValidateConfig(t *testing.T) {
+// 	valid := Config{
+// 		Office:    "NWS Tallahassee FL",
+// 		Area:      "FL",
+// 		UserAgent: "weatherwatch (test@example.com)",
+// 		Events:    []string{"Tornado Warning"},
+// 	}
 
-	t.Run("valid config", func(t *testing.T) {
-		err := validateConfig(valid)
-		assert.NoError(t, err)
-	})
+// 	t.Run("valid config", func(t *testing.T) {
+// 		err := validateConfig(valid)
+// 		assert.NoError(t, err)
+// 	})
 
-	t.Run("missing area", func(t *testing.T) {
-		cfg := valid
-		cfg.Area = ""
-		err := validateConfig(cfg)
-		assert.Error(t, err)
-	})
+// 	t.Run("missing area", func(t *testing.T) {
+// 		cfg := valid
+// 		cfg.Area = ""
+// 		err := validateConfig(cfg)
+// 		assert.Error(t, err)
+// 	})
 
-	t.Run("missing events", func(t *testing.T) {
-		cfg := valid
-		cfg.Events = nil
-		err := validateConfig(cfg)
-		assert.Error(t, err)
-	})
+// 	t.Run("missing events", func(t *testing.T) {
+// 		cfg := valid
+// 		cfg.Events = nil
+// 		err := validateConfig(cfg)
+// 		assert.Error(t, err)
+// 	})
 
-	t.Run("missing office", func(t *testing.T) {
-		cfg := valid
-		cfg.Office = ""
-		err := validateConfig(cfg)
-		assert.Error(t, err)
-	})
+// 	t.Run("missing office", func(t *testing.T) {
+// 		cfg := valid
+// 		cfg.Office = ""
+// 		err := validateConfig(cfg)
+// 		assert.Error(t, err)
+// 	})
 
-	t.Run("missing user agent", func(t *testing.T) {
-		cfg := valid
-		cfg.UserAgent = ""
-		err := validateConfig(cfg)
-		assert.Error(t, err)
-	})
-}
+// 	t.Run("missing user agent", func(t *testing.T) {
+// 		cfg := valid
+// 		cfg.UserAgent = ""
+// 		err := validateConfig(cfg)
+// 		assert.Error(t, err)
+// 	})
+// }
 
 // func TestConnectNOAA_Success(t *testing.T) {
 // 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

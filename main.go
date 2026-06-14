@@ -16,17 +16,19 @@ const pointsURL = "https://api.weather.gov/points/"
 func main() {
 	client := &http.Client{Timeout: 30 * time.Second}
 
-	zip := flag.String("zip", "", "Zip code to look up your NWS office (e.g. -zip 32547)")
+	zip := flag.String("zip", "", "Zip code to look up your NWS Zone (e.g. -zip 32547)")
+	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")
 	flag.Parse()
 
+	// Convert zip to lat/long if zip flag is sent in - End program after
 	if *zip != "" {
-		office, err := weather.LookupOffice(client, zipURL, pointsURL, *zip)
+		zone, err := weather.LookupZone(client, zipURL, pointsURL, *zip, *debug)
 		if err != nil {
 			fmt.Printf("Error: %v.\n", err)
 			return
 		}
-		fmt.Printf("Your NWS office is %s:\n", office)
-		fmt.Println("Add this to the 'office' field in config.toml")
+		fmt.Printf("Your NWS Zone is %s:\n", zone)
+		fmt.Println("Add this to the 'zone' field in config.toml")
 		return
 	}
 
@@ -37,27 +39,6 @@ func main() {
 	}
 	fmt.Println(key)
 	fmt.Println(cfg)
-
-	// // Check if Pushover environment variable is set
-	// _, err := weather.GetPushoverKey()
-	// if err != nil {
-	// 	fmt.Printf("Error: %v.\n", err)
-	// 	return
-	// }
-
-	// // Load config file
-	// cfg, err := weather.LoadConfig("config.toml")
-	// if err != nil {
-	// 	fmt.Printf("Error: %v.\n", err)
-	// 	return
-	// }
-
-	// // Validate config file
-	// err = weather.ValidateConfig(cfg)
-	// if err != nil {
-	// 	fmt.Printf("Error: %v.\n", err)
-	// 	return
-	// }
 
 	// debug := flag.Bool("debug", false, "print raw API response (use -debug to enable)")
 	// flag.Parse()

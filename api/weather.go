@@ -7,28 +7,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/BurntSushi/toml"
 )
-
-// Config objec to hold config.toml fields
-type Config struct {
-	Office    string   `toml:"office"`
-	Area      string   `toml:"area"`
-	UserAgent string   `toml:"user_agent"`
-	Events    []string `toml:"events"`
-}
-
-// Zip and Place struct to hold retuned zip to lat long fields
-type ZipResponse struct {
-	Places []Place `json:"places"`
-}
-
-type Place struct {
-	Latitude  string `json:"latitude"`
-	Longitude string `json:"longitude"`
-}
 
 type AlertResponse struct {
 	Features []Feature `json:"features"`
@@ -55,6 +38,11 @@ type AlertProperties struct {
 	SenderName  string    `json:"senderName"`
 	Description string    `json:"description"`
 	Instruction string    `json:"instruction"`
+	Geocode     Geocode   `json:"geocode"`
+}
+
+type Geocode struct {
+	UGC []string `json:"UGC"`
 }
 
 func PreRunSetup() (string, Config, error) {
@@ -85,6 +73,22 @@ func getPushoverKey() (string, error) {
 	return key, nil
 }
 
+func getUserAgent() (string, error) {
+	userAgent := os.Getenv("WEATHERWATCH_USER_AGENT")
+	if userAgent == "" {
+		return "", fmt.Errorf("WEATHERWATCH_USER_AGENT environment variable not set")
+	}
+	return userAgent, nil
+}
+
+// Struct to hold config.toml fields
+type Config struct {
+	Zone      string   `toml:"zone"`
+	Area      string   `toml:"area"`
+	UserAgent string   `toml:"user_agent"`
+	Events    []string `toml:"events"`
+}
+
 // Check if config is there and unmarshal if it is
 func loadConfig(path string) (Config, error) {
 	var cfg Config
@@ -102,37 +106,39 @@ func validateConfig(cfg Config) error {
 	if len(cfg.Events) == 0 {
 		return fmt.Errorf("events are missing from config.toml")
 	}
-	if cfg.Office == "" {
-		return fmt.Errorf("NWS office is missing — run with -zip to find your NWS office")
-	}
-	if cfg.UserAgent == "" {
-		return fmt.Errorf("useragent field is empty")
+	if cfg.Zone == "" {
+		return fmt.Errorf("NWS Zone is missing — run with -zip to find your NWS Zone")
 	}
 
 	return nil
 }
 
-func LookupOffice(client *http.Client, zipURL string, pointsURL string, zip string) (string, error) {
-	err := validateZip(zip)
+// Runs four functions to retrieve NWS Zone if -zip flag is sent in
+func LookupZone(client *http.Client, zipURL string, pointsURL string, zip string, debug bool) (string, error) {
+
+	userAgent, err := getUserAgent()
 	if err != nil {
 		return "", err
 	}
 
-	lat, lon, err := zipToLatLon(client, zipURL, zip)
+	err = validateZip(zip)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(lat)
-	fmt.Print(lon)
 
-	// office, err := latLonToOffice(client, lat, lon)
-	// if err != nil {
-	// 	return "", err
-	// }
-	return "", nil
+	lat, lon, err := zipToLatLon(client, zipURL, zip, debug)
+	if err != nil {
+		return "", err
+	}
+
+	zone, err := latLonToZone(client, pointsURL, userAgent, lat, lon, debug)
+	if err != nil {
+		return "", err
+	}
+	return zone, nil
 }
 
-// Check to see if user entered zip flag is 5 digits
+// Check to see if the entered zip flag is 5 digits
 func validateZip(zip string) error {
 	if len(zip) != 5 {
 		return fmt.Errorf("%q is not valid, must be 5 digits in length", zip)
@@ -145,7 +151,18 @@ func validateZip(zip string) error {
 	return nil
 }
 
-func zipToLatLon(client *http.Client, zipURL string, zip string) (string, string, error) {
+// Struct to hold returned lat/long fields
+type ZipResponse struct {
+	Places []Place `json:"places"`
+}
+
+type Place struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+}
+
+// Send to Zippopotam.us to retrieve Lat/Long
+func zipToLatLon(client *http.Client, zipURL string, zip string, debug bool) (string, string, error) {
 	//Setup context, Get, and URL
 	url := zipURL + zip
 	req, err := http.NewRequestWithContext(context.Background(),
@@ -168,6 +185,10 @@ func zipToLatLon(client *http.Client, zipURL string, zip string) (string, string
 		return "", "", fmt.Errorf("reading body: %s", err)
 	}
 
+	if debug {
+		fmt.Printf("\n--- Raw response from %s ---\n%s\n", url, string(body))
+	}
+
 	// Return any error messages the API sends
 	if res.StatusCode == http.StatusNotFound {
 		return "", "", fmt.Errorf("zip code %q not found", zip)
@@ -184,7 +205,7 @@ func zipToLatLon(client *http.Client, zipURL string, zip string) (string, string
 	}
 
 	// Guard against there ever being a sucessful 200 response but for whatever reason
-	// Places[0] is empty of lat/long
+	// zipResp.Places[0] is empty of lat/long
 	if len(zipResp.Places) == 0 {
 		return "", "", fmt.Errorf("no location data returned for zip %q", zip)
 	}
@@ -192,7 +213,57 @@ func zipToLatLon(client *http.Client, zipURL string, zip string) (string, string
 	return zipResp.Places[0].Latitude, zipResp.Places[0].Longitude, nil
 }
 
-func latLonToOffice(client *http.Client, lat string, long string) {
+// Structs to hold returned NWS zone
+type PointsResponse struct {
+	Properties PointsProperties `json:"properties"`
+}
+
+type PointsProperties struct {
+	ForecastZone string `json:"forecastZone"`
+}
+
+func latLonToZone(client *http.Client, pointsURL string, userAgent string, lat string, long string, debug bool) (string, error) {
+	// Setup context, Get, and URL
+	url := pointsURL + lat + "," + long
+	req, err := http.NewRequestWithContext(context.Background(),
+		http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to build request %s", err)
+	}
+
+	// Build the headers
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Accept", "application/geo+json")
+	res, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("network error %s", err)
+	}
+	defer res.Body.Close()
+
+	// Read body
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", fmt.Errorf("reading body: %s", err)
+	}
+
+	if debug {
+		fmt.Printf("\n--- Raw response from %s ---\n%s\n", url, string(body))
+	}
+
+	// Return any error messages the API sends
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API error %d: %s", res.StatusCode, string(body))
+	}
+
+	// Finally unmarshal into a slice containing the struct declared above
+	var response PointsResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", fmt.Errorf("unmarshal failed %s", err)
+	}
+	// Returns the last segment of the address after the "/"
+	zone := path.Base(response.Properties.ForecastZone)
+	return zone, nil
 }
 
 // func ConnectNOAA(client *http.Client, alertsURL string, state string, debug bool) (AlertResponse, error) {

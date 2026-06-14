@@ -1,8 +1,6 @@
-# Run with -zip to find your NWS office and then input your office inside the " "
-office = "NWS Tallahassee FL"
-# Enter your two state abbreviate below
+# Run with -zip to find your zone code and add it below
+zone = "FLZ112"
+# Add your two letter state abbreviation below
 area = "FL"
-# NWS requires a user_agent field here.  See README
-user_agent = "weatherwatch (your@email.com)"
 # Valid event strings come from the NWS API's "event" field
-events = ["Tornado Warning", "Severe Thunderstorm Warning"]
+events = ["Tornado Warning", "Severe Thunderstorm Warning", "Heat Advisory"]
