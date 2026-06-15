@@ -1,5 +1,4 @@
 # Rename this to config.toml after adding in the below settings.
-# You must also add two environment variables (WEATHERWATCH_USER_AGENT and PUSHOVER_API_KEY). See README for details.
 
 # Run with -zip to find your locasl NWS office by your zipcode and then add the zone code returned below.
 zone = "FLZ112"

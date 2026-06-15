@@ -19,6 +19,7 @@ func main() {
 	zip := flag.String("zip", "", "Zip code to look up your NWS Zone (e.g. -zip 32547)")
 	listevents := flag.Bool("listevents", false, "List all valid NWS alert event types")
 	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")
+	print := flag.Bool("print", false, "Print alerts matching your configured zone and events, then exit")
 	flag.Parse()
 
 	// Convert zip to lat/long if zip flag is sent in - End program after
@@ -43,6 +44,7 @@ func main() {
 		return
 	}
 
+	// Make sure we have environment variables set and the config.toml filled in
 	key, cfg, err := weather.PreRunSetup()
 	if err != nil {
 		fmt.Printf("Error: %v.\n", err)
@@ -58,6 +60,12 @@ func main() {
 		return
 	}
 
-	weather.PrintMatchingAlerts(alerts, cfg)
+	// Print alerts to console and then end program. Useful for seeing alerts without firing off notifications
+	if *print {
+		weather.PrintMatchingAlerts(alerts, cfg)
+		return
+	}
+
+	// Pushover logic
 
 }
