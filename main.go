@@ -48,16 +48,16 @@ func main() {
 		fmt.Printf("Error: %v.\n", err)
 		return
 	}
+
+	// Temporary for compiling
 	fmt.Println(key)
-	fmt.Println(cfg)
 
-	// debug := flag.Bool("debug", false, "print raw API response (use -debug to enable)")
-	// flag.Parse()
+	alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
+	if err != nil {
+		fmt.Printf("Error: %s.\n", err)
+		return
+	}
 
-	// alerts, err := weather.ConnectNOAA(client, alertsURL, *debug)
-	// if err != nil {
-	// 	fmt.Printf("Error: %s.\n", err)
-	// 	return
-	// }
-	// fmt.Println(alerts)
+	weather.PrintMatchingAlerts(alerts, cfg)
+
 }
