@@ -17,6 +17,7 @@ func main() {
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	zip := flag.String("zip", "", "Zip code to look up your NWS Zone (e.g. -zip 32547)")
+	listevents := flag.Bool("listevents", false, "List all valid NWS alert event types")
 	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")
 	flag.Parse()
 
@@ -29,6 +30,16 @@ func main() {
 		}
 		fmt.Printf("Your NWS Zone is %s:\n", zone)
 		fmt.Println("Add this to the 'zone' field in config.toml")
+		return
+	}
+
+	// List valid event types - End program after
+	if *listevents {
+		err := weather.ListEventTypes(client, alertsURL, *debug)
+		if err != nil {
+			fmt.Printf("Error: %v.\n", err)
+			return
+		}
 		return
 	}
 

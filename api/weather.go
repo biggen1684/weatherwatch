@@ -73,6 +73,7 @@ func getPushoverKey() (string, error) {
 	return key, nil
 }
 
+// Load User Agent needed from environment variable for NOAA api access
 func getUserAgent() (string, error) {
 	userAgent := os.Getenv("WEATHERWATCH_USER_AGENT")
 	if userAgent == "" {
@@ -99,15 +100,16 @@ func loadConfig(path string) (Config, error) {
 	return cfg, nil
 }
 
+// Validate fields are filled in - Doesn't validate they are accurate!
 func validateConfig(cfg Config) error {
 	if cfg.Area == "" {
-		return fmt.Errorf("area is missing from config.toml")
+		return fmt.Errorf("area is missing from config.toml - must be a two letter state code")
 	}
 	if len(cfg.Events) == 0 {
-		return fmt.Errorf("events are missing from config.toml")
+		return fmt.Errorf("events are missing from config.toml - run with -listevents to find all valid events available")
 	}
 	if cfg.Zone == "" {
-		return fmt.Errorf("NWS Zone is missing — run with -zip to find your NWS Zone")
+		return fmt.Errorf("NWS Zone is missing from config.toml — run with -zip to find your NWS Zone")
 	}
 
 	return nil
@@ -222,6 +224,7 @@ type PointsProperties struct {
 	ForecastZone string `json:"forecastZone"`
 }
 
+// Retrieve NWS zone from NWS API via lat/long that was returned earlier
 func latLonToZone(client *http.Client, pointsURL string, userAgent string, lat string, long string, debug bool) (string, error) {
 	// Setup context, Get, and URL
 	url := pointsURL + lat + "," + long
@@ -264,6 +267,58 @@ func latLonToZone(client *http.Client, pointsURL string, userAgent string, lat s
 	// Returns the last segment of the address after the "/"
 	zone := path.Base(response.Properties.ForecastZone)
 	return zone, nil
+}
+
+// Struct to hold alerts types from NWS
+type AlertTypesResponse struct {
+	EventTypes []string `json:"eventTypes"`
+}
+
+// Print all valid alerts types from NWS if -listevents flag is passed in
+func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
+	userAgent, err := getUserAgent()
+	if err != nil {
+		return err
+	}
+
+	url := alertsURL + "types"
+	req, err := http.NewRequestWithContext(context.Background(),
+		http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %s", err)
+	}
+
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Accept", "application/ld+json")
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("network error: %s", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("reading body: %s", err)
+	}
+
+	if debug {
+		fmt.Printf("\n--- Raw response from %s ---\n%s\n", url, string(body))
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("API error %d: %s", res.StatusCode, string(body))
+	}
+
+	var types AlertTypesResponse
+	if err := json.Unmarshal(body, &types); err != nil {
+		return fmt.Errorf("unmarshal failed: %s", err)
+	}
+
+	fmt.Print("The following are all valid Alert Event types for the NWS:\n\n")
+	for _, v := range types.EventTypes {
+		fmt.Println(v)
+	}
+	return nil
 }
 
 // func ConnectNOAA(client *http.Client, alertsURL string, state string, debug bool) (AlertResponse, error) {
