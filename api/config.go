@@ -2,7 +2,6 @@ package weather
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/BurntSushi/toml"
 )
@@ -16,6 +15,8 @@ type Config struct {
 }
 
 func PreRunSetup() (string, Config, error) {
+
+	// getPushoverKey() is located in env.go
 	key, err := getPushoverKey()
 	if err != nil {
 		return "", Config{}, err
@@ -32,15 +33,6 @@ func PreRunSetup() (string, Config, error) {
 	}
 
 	return key, cfg, nil
-}
-
-// Load Pushover API key from environment variable
-func getPushoverKey() (string, error) {
-	key := os.Getenv("PUSHOVER_API_KEY")
-	if key == "" {
-		return "", fmt.Errorf("PUSHOVER_API_KEY environment variable not set")
-	}
-	return key, nil
 }
 
 // Check if config is there and unmarshal if it is
@@ -66,13 +58,4 @@ func validateConfig(cfg Config) error {
 	}
 
 	return nil
-}
-
-// Load User Agent needed from environment variable for NOAA api access
-func getUserAgent() (string, error) {
-	userAgent := os.Getenv("WEATHERWATCH_USER_AGENT")
-	if userAgent == "" {
-		return "", fmt.Errorf("WEATHERWATCH_USER_AGENT environment variable not set")
-	}
-	return userAgent, nil
 }

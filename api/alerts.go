@@ -49,6 +49,8 @@ type AlertTypesResponse struct {
 
 // Print all valid alerts types from NWS if -listevents flag is passed in
 func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
+
+	// getUserAgent() is located in env.go
 	userAgent, err := getUserAgent()
 	if err != nil {
 		return err
@@ -95,7 +97,8 @@ func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
 }
 
 func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) (AlertResponse, error) {
-	// Get UserAgen environment variable for NWS API
+
+	// Get UserAgent is located in env.go
 	userAgent, err := getUserAgent()
 	if err != nil {
 		return AlertResponse{}, err

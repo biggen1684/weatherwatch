@@ -12,6 +12,7 @@ import (
 // Runs four functions to retrieve NWS Zone if -zip flag is sent in
 func LookupZone(client *http.Client, zipURL string, pointsURL string, zip string, debug bool) (string, error) {
 
+	// getUserAgent() is located in env.go
 	userAgent, err := getUserAgent()
 	if err != nil {
 		return "", err
