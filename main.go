@@ -72,5 +72,11 @@ func main() {
 	}
 
 	// Pushover logic
+	for _, p := range matches {
+		err := weather.SendPushover(client, apiKey, userKey, p)
+		if err != nil {
+			fmt.Printf("Error sending Pushover: %v.\n", err)
+		}
+	}
 
 }
