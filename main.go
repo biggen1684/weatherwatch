@@ -51,32 +51,45 @@ func main() {
 		return
 	}
 
-	// Temporary for compiling
-	fmt.Println(userKey)
-	fmt.Println(apiKey)
+	// Declare empty variable here pre-loop to set and compare later
+	seen := weather.SeenAlerts{}
 
-	// Connect to NWS API to retrive alerts of type and zone as defined in our config
-	alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
-	if err != nil {
-		fmt.Printf("Error: %s.\n", err)
-		return
-	}
-
-	// Filter alerts returned for either printing or Pushover
-	matches := weather.FilterAlerts(alerts, cfg)
-
-	// Print alerts to console and then end program. Useful for seeing alerts without firing off notifications
-	if *print {
-		weather.PrintMatchingAlerts(matches)
-		return
-	}
-
-	// Pushover logic
-	for _, p := range matches {
-		err := weather.SendPushover(client, apiKey, userKey, p)
+	for {
+		// Connect to NWS API to retrive alerts of type and zone as defined in our config
+		alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
 		if err != nil {
-			fmt.Printf("Error sending Pushover: %v.\n", err)
+			fmt.Printf("Error: %s.\n", err)
+			time.Sleep(60 * time.Second)
+			continue
 		}
-	}
 
+		// Filter alerts returned for either printing or Pushover
+		matches := weather.FilterAlerts(alerts, cfg)
+
+		// Print alerts to console and then end program. Useful for seeing alerts without firing off notifications
+		if *print {
+			weather.PrintMatchingAlerts(matches)
+			return
+		}
+
+		seen = weather.PruneSeenAlerts(seen)
+
+		// Pushover logic - skip anything already notified about
+		for _, p := range matches {
+			if _, alreadySeen := seen[p.ID]; alreadySeen {
+				continue
+			}
+
+			// Pushover call
+			err := weather.SendPushover(client, apiKey, userKey, p)
+			if err != nil {
+				fmt.Printf("Error sending Pushover: %v.\n", err)
+				continue
+			}
+
+			seen[p.ID] = p.Expires
+		}
+
+		time.Sleep(60 * time.Second)
+	}
 }

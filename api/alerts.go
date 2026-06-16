@@ -181,3 +181,18 @@ func PrintMatchingAlerts(matches []AlertProperties) {
 		fmt.Println()
 	}
 }
+
+// SeenAlerts tracks alert IDs already notified about, mapped to their expiration time
+type SeenAlerts map[string]time.Time
+
+// PruneSeenAlerts removes any entries whose alert has already expired
+func PruneSeenAlerts(seen SeenAlerts) SeenAlerts {
+	now := time.Now()      // Get the current time
+	pruned := SeenAlerts{} // Create a new empty map of seen alerts object
+	for id, expires := range seen {
+		if expires.After(now) { // Only keep alerts that haven't expired yet
+			pruned[id] = expires // Add ID that hasn't expired to the new pruned map
+		}
+	}
+	return pruned
+}
