@@ -55,7 +55,7 @@ func main() {
 	seen := weather.SeenAlerts{}
 
 	for {
-		// Connect to NWS API to retrive alerts of type and zone as defined in our config
+		// Connect to NWS API to retrieve alerts of type and zone as defined in our config
 		alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
 		if err != nil {
 			fmt.Printf("Error: %s.\n", err)
@@ -76,10 +76,10 @@ func main() {
 
 		// Pushover logic - skip anything already notified about
 		for _, p := range matches {
-			if _, alreadySeen := seen[p.ID]; alreadySeen {
+			_, alreadySeen := seen[p.ID]
+			if alreadySeen {
 				continue
 			}
-
 			// Pushover call
 			err := weather.SendPushover(client, apiKey, userKey, p)
 			if err != nil {

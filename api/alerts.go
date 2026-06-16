@@ -156,14 +156,13 @@ func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) 
 func FilterAlerts(alerts AlertResponse, cfg Config) []AlertProperties {
 	var matches []AlertProperties
 	for _, f := range alerts.Features {
-		p := f.Properties
-		if !slices.Contains(p.Geocode.UGC, cfg.Zone) {
+		if !slices.Contains(f.Properties.Geocode.UGC, cfg.Zone) {
 			continue
 		}
-		if !slices.Contains(cfg.Events, p.Event) {
+		if !slices.Contains(cfg.Events, f.Properties.Event) {
 			continue
 		}
-		matches = append(matches, p)
+		matches = append(matches, f.Properties)
 	}
 	return matches
 }
