@@ -9,10 +9,8 @@ import (
 	"strings"
 )
 
-const pushoverURL = "https://api.pushover.net/1/messages.json"
-
 // Sends a Pushover notification for a matching alert
-func SendPushover(client *http.Client, apiKey string, userKey string, alert AlertProperties) error {
+func SendPushover(client *http.Client, pushoverURL string, apiKey string, userKey string, alert FlatAlert) error {
 
 	// Build POST form data
 	data := url.Values{}
