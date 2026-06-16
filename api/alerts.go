@@ -152,25 +152,32 @@ func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) 
 	return alerts, nil
 }
 
-// Print matching alerts to the screen - temporary, will become a Pushover notification later
-func PrintMatchingAlerts(alerts AlertResponse, cfg Config) {
+// Returns alerts matching the configured zone and events for printing or Pushover
+func FilterAlerts(alerts AlertResponse, cfg Config) []AlertProperties {
+	var matches []AlertProperties
 	for _, f := range alerts.Features {
 		p := f.Properties
-
 		if !slices.Contains(p.Geocode.UGC, cfg.Zone) {
 			continue
 		}
 		if !slices.Contains(cfg.Events, p.Event) {
 			continue
 		}
+		matches = append(matches, p)
+	}
+	return matches
+}
 
+// Prints alerts to the screen if flag is sent - Useful for seeing alerts without firing off notifications
+func PrintMatchingAlerts(matches []AlertProperties) {
+	for _, v := range matches {
 		fmt.Println("--- Matching Alert ---")
-		fmt.Println("Event: ", p.Event)
-		fmt.Println("Severity: ", p.Severity)
-		fmt.Println("Headline: ", p.Headline)
+		fmt.Println("Event: ", v.Event)
+		fmt.Println("Severity: ", v.Severity)
+		fmt.Println("Headline: ", v.Headline)
 		fmt.Println("Description:")
-		fmt.Println(p.Description)
-		fmt.Println("Area: ", p.AreaDesc)
+		fmt.Println(v.Description)
+		fmt.Println("Area: ", v.AreaDesc)
 		fmt.Println()
 	}
 }

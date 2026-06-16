@@ -44,25 +44,30 @@ func main() {
 		return
 	}
 
-	// Make sure we have environment variables set and the config.toml filled in
-	key, cfg, err := weather.PreRunSetup()
+	// Make sure we have environment variables set and the config.toml
+	apiKey, userKey, cfg, err := weather.PreRunSetup()
 	if err != nil {
 		fmt.Printf("Error: %v.\n", err)
 		return
 	}
 
 	// Temporary for compiling
-	fmt.Println(key)
+	fmt.Println(userKey)
+	fmt.Println(apiKey)
 
+	// Connect to NWS API to retrive alerts of type and zone as defined in our config
 	alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
 	if err != nil {
 		fmt.Printf("Error: %s.\n", err)
 		return
 	}
 
+	// Filter alerts returned for either printing or Pushover
+	matches := weather.FilterAlerts(alerts, cfg)
+
 	// Print alerts to console and then end program. Useful for seeing alerts without firing off notifications
 	if *print {
-		weather.PrintMatchingAlerts(alerts, cfg)
+		weather.PrintMatchingAlerts(matches)
 		return
 	}
 

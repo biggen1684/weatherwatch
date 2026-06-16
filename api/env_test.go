@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetPushoverKey(t *testing.T) {
+func TestGetPushoverAPIKey(t *testing.T) {
 	t.Run("key is set", func(t *testing.T) {
 		t.Setenv("PUSHOVER_API_KEY", "abc123")
 
-		key, err := getPushoverKey()
+		key, err := getPushoverAPIKey()
 		assert.NoError(t, err)
 		assert.Equal(t, "abc123", key)
 	})
@@ -18,7 +18,24 @@ func TestGetPushoverKey(t *testing.T) {
 	t.Run("key is missing", func(t *testing.T) {
 		t.Setenv("PUSHOVER_API_KEY", "")
 
-		_, err := getPushoverKey()
+		_, err := getPushoverAPIKey()
+		assert.Error(t, err)
+	})
+}
+
+func TestGetPushoverUserKey(t *testing.T) {
+	t.Run("user key is set", func(t *testing.T) {
+		t.Setenv("PUSHOVER_USER_KEY", "xyz789")
+
+		key, err := getPushoverUserKey()
+		assert.NoError(t, err)
+		assert.Equal(t, "xyz789", key)
+	})
+
+	t.Run("user key is missing", func(t *testing.T) {
+		t.Setenv("PUSHOVER_USER_KEY", "")
+
+		_, err := getPushoverUserKey()
 		assert.Error(t, err)
 	})
 }

@@ -18,10 +18,19 @@ func getUserAgent() (string, error) {
 }
 
 // Load Pushover API key from environment variable
-func getPushoverKey() (string, error) {
-	key := os.Getenv("PUSHOVER_API_KEY")
-	if key == "" {
+func getPushoverAPIKey() (string, error) {
+	apiKey := os.Getenv("PUSHOVER_API_KEY")
+	if apiKey == "" {
 		return "", fmt.Errorf("PUSHOVER_API_KEY environment variable not set")
 	}
-	return key, nil
+	return apiKey, nil
+}
+
+// Load Pushover USER key from environment variable
+func getPushoverUserKey() (string, error) {
+	userKey := os.Getenv("PUSHOVER_USER_KEY")
+	if userKey == "" {
+		return "", fmt.Errorf("PUSHOVER_USER_KEY environment variable not set")
+	}
+	return userKey, nil
 }

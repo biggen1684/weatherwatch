@@ -14,25 +14,31 @@ type Config struct {
 	Events    []string `toml:"events"`
 }
 
-func PreRunSetup() (string, Config, error) {
+func PreRunSetup() (string, string, Config, error) {
 
 	// getPushoverKey() is located in env.go
-	key, err := getPushoverKey()
+	apiKey, err := getPushoverAPIKey()
 	if err != nil {
-		return "", Config{}, err
+		return "", "", Config{}, err
+	}
+
+	// getPushoverKey() is located in env.go
+	userKey, err := getPushoverUserKey()
+	if err != nil {
+		return "", "", Config{}, err
 	}
 
 	cfg, err := loadConfig("config.toml")
 	if err != nil {
-		return "", Config{}, err
+		return "", "", Config{}, err
 	}
 
 	err = validateConfig(cfg)
 	if err != nil {
-		return "", Config{}, err
+		return "", "", Config{}, err
 	}
 
-	return key, cfg, nil
+	return apiKey, userKey, cfg, nil
 }
 
 // Check if config is there and unmarshal if it is
