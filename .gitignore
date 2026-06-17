@@ -1,1 +1,14 @@
+# Compiled binary (module is named "weatherwatch")
+weatherwatch
+weatherwatch.exe
+
+# Test binaries
+*.test
+
+# Coverage output
+*.out
+
+# Runtime files (user-specific, generated at runtime)
 config.toml
+weatherwatch.log
+
