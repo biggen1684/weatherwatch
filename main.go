@@ -13,11 +13,12 @@ import (
 const alertsURL = "https://api.weather.gov/alerts/"
 const zipURL = "https://api.zippopotam.us/us/"
 const pointsURL = "https://api.weather.gov/points/"
+const pushoverURL = "https://api.pushover.net/1/messages.json"
 
 func main() {
 
 	// Setup logger for output of logs
-	logFile, err := weather.SetupLogger()
+	logFile, err := weather.SetupLogger("weatherwatch.log")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -92,7 +93,7 @@ func main() {
 				continue
 			}
 			// Pushover call
-			err := weather.SendPushover(client, apiKey, userKey, p)
+			err := weather.SendPushover(client, pushoverURL, apiKey, userKey, p)
 			if err != nil {
 				slog.Error("pushover notification failed", "error", err)
 				continue

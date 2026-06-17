@@ -7,8 +7,8 @@ import (
 )
 
 // Create the .log file and append logs to it.  Open it for writing only
-func SetupLogger() (*os.File, error) {
-	logFile, err := os.OpenFile("weatherwatch.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func SetupLogger(path string) (*os.File, error) {
+	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("could not open log file: %v", err)
 	}

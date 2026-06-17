@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -145,5 +146,98 @@ func TestFilterAlerts(t *testing.T) {
 		cfg.Events = []string{"Hurricane Warning"}
 		matches := FilterAlerts(mockAlertResponse, cfg)
 		assert.Len(t, matches, 0)
+	})
+}
+
+func TestPruneSeenAlerts(t *testing.T) {
+	t.Run("removes expired entries", func(t *testing.T) {
+		seen := SeenAlerts{
+			"expired-alert": time.Now().Add(-1 * time.Hour),
+			"active-alert":  time.Now().Add(1 * time.Hour),
+		}
+
+		pruned := PruneSeenAlerts(seen)
+
+		assert.Len(t, pruned, 1)
+		_, exists := pruned["active-alert"]
+		assert.True(t, exists)
+		_, exists = pruned["expired-alert"]
+		assert.False(t, exists)
+	})
+
+	t.Run("keeps all entries when none expired", func(t *testing.T) {
+		seen := SeenAlerts{
+			"alert-1": time.Now().Add(1 * time.Hour),
+			"alert-2": time.Now().Add(2 * time.Hour),
+		}
+
+		pruned := PruneSeenAlerts(seen)
+
+		assert.Len(t, pruned, 2)
+	})
+
+	t.Run("removes all entries when all expired", func(t *testing.T) {
+		seen := SeenAlerts{
+			"alert-1": time.Now().Add(-1 * time.Hour),
+			"alert-2": time.Now().Add(-2 * time.Hour),
+		}
+
+		pruned := PruneSeenAlerts(seen)
+
+		assert.Len(t, pruned, 0)
+	})
+
+	t.Run("empty map returns empty map", func(t *testing.T) {
+		pruned := PruneSeenAlerts(SeenAlerts{})
+		assert.Len(t, pruned, 0)
+	})
+}
+
+func TestListEventTypes(t *testing.T) {
+	t.Run("valid response prints event types", func(t *testing.T) {
+		t.Setenv("WEATHERWATCH_USER_AGENT", "weatherwatch (test@example.com)")
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{
+				"eventTypes": ["Tornado Warning", "Heat Advisory", "Flash Flood Warning"]
+			}`))
+		}))
+		defer server.Close()
+
+		err := ListEventTypes(server.Client(), server.URL+"/", false)
+		assert.NoError(t, err)
+	})
+
+	t.Run("server error", func(t *testing.T) {
+		t.Setenv("WEATHERWATCH_USER_AGENT", "weatherwatch (test@example.com)")
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
+
+		err := ListEventTypes(server.Client(), server.URL+"/", false)
+		assert.Error(t, err)
+	})
+
+	t.Run("malformed json", func(t *testing.T) {
+		t.Setenv("WEATHERWATCH_USER_AGENT", "weatherwatch (test@example.com)")
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{invalid`))
+		}))
+		defer server.Close()
+
+		err := ListEventTypes(server.Client(), server.URL+"/", false)
+		assert.Error(t, err)
+	})
+
+	t.Run("missing user agent", func(t *testing.T) {
+		t.Setenv("WEATHERWATCH_USER_AGENT", "")
+
+		err := ListEventTypes(http.DefaultClient, "https://example.com/", false)
+		assert.Error(t, err)
 	})
 }
