@@ -42,6 +42,7 @@ type PointsResponse struct {
 
 type PointsProperties struct {
 	ForecastZone string `json:"forecastZone"`
+	Type         string `json:"type"`
 }
 
 // Retrieve NWS zone from NWS API via lat/long that was returned earlier
@@ -86,5 +87,10 @@ func latLonToZone(client *http.Client, pointsURL string, userAgent string, lat s
 	}
 	// Returns the last segment of the address after the "/"
 	zone := path.Base(response.Properties.ForecastZone)
+
+	// If zip corresponds to a marine zone, notifier the user
+	if response.Properties.Type == "marine" {
+		return zone, fmt.Errorf("this zip resolved to a marine zone (%s) which you probably don't want (but could use).\nThe geocoded coordinate likely fell over water so try a nearby zip instead", zone)
+	}
 	return zone, nil
 }

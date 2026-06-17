@@ -18,8 +18,14 @@ func SendPushover(client *http.Client, apiKey string, userKey string, alert Aler
 	data := url.Values{}
 	data.Set("token", apiKey)
 	data.Set("user", userKey)
-	data.Set("title", alert.Event)
-	data.Set("message", alert.Headline)
+	data.Set("title", alert.Headline)
+	// Pushover has a 1024 char limit. Make sure we truncate ourselves if we go over
+	// because Pushover will reject it if so
+	message := alert.Description + "\n\nArea: " + alert.AreaDesc
+	if len(message) > 1024 {
+		message = message[:1021] + "..."
+	}
+	data.Set("message", message)
 
 	// Build request with context and form body
 	req, err := http.NewRequestWithContext(context.Background(),

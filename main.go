@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -14,6 +15,15 @@ const zipURL = "https://api.zippopotam.us/us/"
 const pointsURL = "https://api.weather.gov/points/"
 
 func main() {
+
+	// Setup logger for output of logs
+	logFile, err := weather.SetupLogger()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer logFile.Close()
+
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	zip := flag.String("zip", "", "Zip code to look up your NWS Zone (e.g. -zip 32547)")
@@ -48,6 +58,7 @@ func main() {
 	apiKey, userKey, cfg, err := weather.PreRunSetup()
 	if err != nil {
 		fmt.Printf("Error: %v.\n", err)
+		slog.Error("pre-run setup failed", "error", err)
 		return
 	}
 
@@ -58,7 +69,7 @@ func main() {
 		// Connect to NWS API to retrieve alerts of type and zone as defined in our config
 		alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
 		if err != nil {
-			fmt.Printf("Error: %s.\n", err)
+			slog.Error("connect to NOAA failed", "error", err)
 			time.Sleep(60 * time.Second)
 			continue
 		}
@@ -83,10 +94,14 @@ func main() {
 			// Pushover call
 			err := weather.SendPushover(client, apiKey, userKey, p)
 			if err != nil {
-				fmt.Printf("Error sending Pushover: %v.\n", err)
+				slog.Error("pushover notification failed", "error", err)
 				continue
 			}
 
+			// Log successful Pushover
+			slog.Info("alert sent", "event", p.Event, "headline", p.Headline)
+
+			// Add ID:expires to seen map after a sucessful Pushover notification
 			seen[p.ID] = p.Expires
 		}
 
