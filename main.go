@@ -12,7 +12,6 @@ import (
 const alertsURL = "https://api.weather.gov/alerts/"
 const zipURL = "https://api.zippopotam.us/us/"
 const pointsURL = "https://api.weather.gov/points/"
-const pushoverURL = "https://api.pushover.net/1/messages.json"
 
 func main() {
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -64,9 +63,8 @@ func main() {
 			continue
 		}
 
-		// Flatten alerts into a single level struct and then check for matches
-		flat := weather.FlattenAlerts(alerts)
-		matches := weather.FilterAlerts(flat, cfg)
+		// Filter alerts returned for either printing or Pushover
+		matches := weather.FilterAlerts(alerts, cfg)
 
 		// Print alerts to console and then end program. Useful for seeing alerts without firing off notifications
 		if *print {
@@ -83,7 +81,7 @@ func main() {
 				continue
 			}
 			// Pushover call
-			err := weather.SendPushover(client, pushoverURL, apiKey, userKey, p)
+			err := weather.SendPushover(client, apiKey, userKey, p)
 			if err != nil {
 				fmt.Printf("Error sending Pushover: %v.\n", err)
 				continue

@@ -74,33 +74,41 @@ func TestConnectNOAA(t *testing.T) {
 	})
 }
 
+var mockAlertResponse = AlertResponse{
+	Features: []Feature{
+		{
+			Properties: AlertProperties{
+				ID:      "urn:oid:1",
+				Event:   "Tornado Warning",
+				Geocode: Geocode{UGC: []string{"FLZ108", "FLZ112", "FLZ114"}},
+			},
+		},
+		{
+			Properties: AlertProperties{
+				ID:      "urn:oid:2",
+				Event:   "Heat Advisory",
+				Geocode: Geocode{UGC: []string{"FLZ112"}},
+			},
+		},
+		{
+			Properties: AlertProperties{
+				ID:      "urn:oid:3",
+				Event:   "Tornado Warning",
+				Geocode: Geocode{UGC: []string{"FLZ069", "FLZ075"}},
+			},
+		},
+	},
+}
+
 var mockCfg = Config{
 	Zone:   "FLZ112",
 	Area:   "FL",
 	Events: []string{"Tornado Warning"},
 }
 
-var mockFlatAlerts = []FlatAlert{
-	{
-		ID:    "urn:oid:1",
-		Event: "Tornado Warning",
-		Zones: []string{"FLZ108", "FLZ112", "FLZ114"},
-	},
-	{
-		ID:    "urn:oid:2",
-		Event: "Heat Advisory",
-		Zones: []string{"FLZ112"},
-	},
-	{
-		ID:    "urn:oid:3",
-		Event: "Tornado Warning",
-		Zones: []string{"FLZ069", "FLZ075"},
-	},
-}
-
 func TestFilterAlerts(t *testing.T) {
 	t.Run("matches zone and event", func(t *testing.T) {
-		matches := FilterAlerts(mockFlatAlerts, mockCfg)
+		matches := FilterAlerts(mockAlertResponse, mockCfg)
 		assert.Len(t, matches, 1)
 		assert.Equal(t, "Tornado Warning", matches[0].Event)
 		assert.Equal(t, "urn:oid:1", matches[0].ID)
@@ -109,70 +117,33 @@ func TestFilterAlerts(t *testing.T) {
 	t.Run("wrong zone not matched", func(t *testing.T) {
 		cfg := mockCfg
 		cfg.Zone = "FLZ999"
-		matches := FilterAlerts(mockFlatAlerts, cfg)
+		matches := FilterAlerts(mockAlertResponse, cfg)
 		assert.Len(t, matches, 0)
 	})
 
 	t.Run("wrong event not matched", func(t *testing.T) {
 		cfg := mockCfg
 		cfg.Events = []string{"Hurricane Warning"}
-		matches := FilterAlerts(mockFlatAlerts, cfg)
+		matches := FilterAlerts(mockAlertResponse, cfg)
 		assert.Len(t, matches, 0)
 	})
 
 	t.Run("multiple events in config", func(t *testing.T) {
 		cfg := mockCfg
 		cfg.Events = []string{"Tornado Warning", "Heat Advisory"}
-		matches := FilterAlerts(mockFlatAlerts, cfg)
+		matches := FilterAlerts(mockAlertResponse, cfg)
 		assert.Len(t, matches, 2)
 	})
 
-	t.Run("empty alerts returns no matches", func(t *testing.T) {
-		matches := FilterAlerts([]FlatAlert{}, mockCfg)
+	t.Run("empty features returns no matches", func(t *testing.T) {
+		matches := FilterAlerts(AlertResponse{}, mockCfg)
 		assert.Len(t, matches, 0)
 	})
 
 	t.Run("correct zone wrong event not matched", func(t *testing.T) {
 		cfg := mockCfg
 		cfg.Events = []string{"Hurricane Warning"}
-		matches := FilterAlerts(mockFlatAlerts, cfg)
+		matches := FilterAlerts(mockAlertResponse, cfg)
 		assert.Len(t, matches, 0)
-	})
-}
-
-func TestFlattenAlerts(t *testing.T) {
-	t.Run("flattens nested response into flat alerts", func(t *testing.T) {
-		resp := AlertResponse{
-			Features: []Feature{
-				{
-					Properties: AlertProperties{
-						ID:      "urn:oid:1",
-						Event:   "Tornado Warning",
-						Geocode: Geocode{UGC: []string{"FLZ108", "FLZ112"}},
-					},
-				},
-				{
-					Properties: AlertProperties{
-						ID:      "urn:oid:2",
-						Event:   "Heat Advisory",
-						Geocode: Geocode{UGC: []string{"FLZ112"}},
-					},
-				},
-			},
-		}
-
-		flat := FlattenAlerts(resp)
-
-		assert.Len(t, flat, 2)
-		assert.Equal(t, "urn:oid:1", flat[0].ID)
-		assert.Equal(t, "Tornado Warning", flat[0].Event)
-		assert.Equal(t, []string{"FLZ108", "FLZ112"}, flat[0].Zones)
-		assert.Equal(t, "urn:oid:2", flat[1].ID)
-		assert.Equal(t, "Heat Advisory", flat[1].Event)
-	})
-
-	t.Run("empty features returns empty slice", func(t *testing.T) {
-		flat := FlattenAlerts(AlertResponse{})
-		assert.Len(t, flat, 0)
 	})
 }

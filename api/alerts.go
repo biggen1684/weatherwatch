@@ -47,26 +47,6 @@ type AlertTypesResponse struct {
 	EventTypes []string `json:"eventTypes"`
 }
 
-// FlatAlert is a single alert with all relevant fields at one level —
-// no need to reach through Feature or Geocode to get anything.
-type FlatAlert struct {
-	ID          string
-	Event       string
-	Severity    string
-	Urgency     string
-	MessageType string
-	Status      string
-	Headline    string
-	AreaDesc    string
-	Onset       time.Time
-	Expires     time.Time
-	Ends        time.Time
-	SenderName  string
-	Description string
-	Instruction string
-	Zones       []string // pulled out of Geocode.UGC
-}
-
 // Print all valid alerts types from NWS if -listevents flag is passed in
 func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
 
@@ -172,47 +152,23 @@ func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) 
 	return alerts, nil
 }
 
-// FlattenAlerts converts the nested AlertResponse into a flat, easy-to-use slice
-func FlattenAlerts(resp AlertResponse) []FlatAlert {
-	flat := make([]FlatAlert, 0, len(resp.Features))
-	for _, f := range resp.Features {
-		flat = append(flat, FlatAlert{
-			ID:          f.Properties.ID,
-			Event:       f.Properties.Event,
-			Severity:    f.Properties.Severity,
-			Urgency:     f.Properties.Urgency,
-			MessageType: f.Properties.MessageType,
-			Status:      f.Properties.Status,
-			Headline:    f.Properties.Headline,
-			AreaDesc:    f.Properties.AreaDesc,
-			Onset:       f.Properties.Onset,
-			Expires:     f.Properties.Expires,
-			Ends:        f.Properties.Ends,
-			SenderName:  f.Properties.SenderName,
-			Description: f.Properties.Description,
-			Instruction: f.Properties.Instruction,
-			Zones:       f.Properties.Geocode.UGC,
-		})
-	}
-	return flat
-}
-
-func FilterAlerts(alerts []FlatAlert, cfg Config) []FlatAlert {
-	var matches []FlatAlert
-	for _, a := range alerts {
-		if !slices.Contains(a.Zones, cfg.Zone) {
+// Returns alerts matching the configured zone and events for printing or Pushover
+func FilterAlerts(alerts AlertResponse, cfg Config) []AlertProperties {
+	var matches []AlertProperties
+	for _, f := range alerts.Features {
+		if !slices.Contains(f.Properties.Geocode.UGC, cfg.Zone) {
 			continue
 		}
-		if !slices.Contains(cfg.Events, a.Event) {
+		if !slices.Contains(cfg.Events, f.Properties.Event) {
 			continue
 		}
-		matches = append(matches, a)
+		matches = append(matches, f.Properties)
 	}
 	return matches
 }
 
 // Prints alerts to the screen if flag is sent - Useful for seeing alerts without firing off notifications
-func PrintMatchingAlerts(matches []FlatAlert) {
+func PrintMatchingAlerts(matches []AlertProperties) {
 	for _, v := range matches {
 		fmt.Println("--- Matching Alert ---")
 		fmt.Println("Event: ", v.Event)
