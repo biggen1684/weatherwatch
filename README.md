@@ -2,6 +2,8 @@
 
 A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in a specific zone and sends push notifications via [Pushover](https://pushover.net) when a configured alert type is issued.
 
+> ⚠️ **Disclaimer:** weatherwatch is a personal learning project intended for educational and recreational use only. It should not be relied upon as a primary source of severe weather alerts or for any life-safety decisions. Always monitor official sources such as the [National Weather Service](https://www.weather.gov), local emergency management agencies, and NOAA Weather Radio for authoritative, real-time severe weather information. The developer makes no guarantees regarding the accuracy, timeliness, or completeness of alerts delivered by this application.
+
 ## Features
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
