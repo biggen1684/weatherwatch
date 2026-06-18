@@ -184,6 +184,10 @@ weatherwatch/
     └── log.go             # Logger setup
 ```
 
+## Logic Flow
+
+![weatherwatch flow](weatherwatch_flow.svg)
+
 ## License
 
 MIT
