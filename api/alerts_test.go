@@ -241,3 +241,49 @@ func TestListEventTypes(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestVtecKey(t *testing.T) {
+	t.Run("valid VTEC returns stable key", func(t *testing.T) {
+		alert := AlertProperties{
+			ID: "urn:oid:1",
+			Parameters: AlertParameters{
+				VTEC: []string{"/O.EXT.KTAE.RP.S.0044.000000T0000Z-260622T0900Z/"},
+			},
+		}
+		assert.Equal(t, "KTAE.RP.S.0044", VtecKey(alert))
+	})
+
+	t.Run("different action same event returns same key", func(t *testing.T) {
+		alert1 := AlertProperties{
+			ID: "urn:oid:1",
+			Parameters: AlertParameters{
+				VTEC: []string{"/O.NEW.KTAE.RP.S.0044.000000T0000Z-260622T0900Z/"},
+			},
+		}
+		alert2 := AlertProperties{
+			ID: "urn:oid:2",
+			Parameters: AlertParameters{
+				VTEC: []string{"/O.EXT.KTAE.RP.S.0044.000000T0000Z-260622T0900Z/"},
+			},
+		}
+		assert.Equal(t, VtecKey(alert1), VtecKey(alert2))
+	})
+
+	t.Run("no VTEC falls back to ID", func(t *testing.T) {
+		alert := AlertProperties{
+			ID:         "urn:oid:fallback",
+			Parameters: AlertParameters{VTEC: []string{}},
+		}
+		assert.Equal(t, "urn:oid:fallback", VtecKey(alert))
+	})
+
+	t.Run("malformed VTEC falls back to ID", func(t *testing.T) {
+		alert := AlertProperties{
+			ID: "urn:oid:fallback",
+			Parameters: AlertParameters{
+				VTEC: []string{"/O.NEW.KTAE/"},
+			},
+		}
+		assert.Equal(t, "urn:oid:fallback", VtecKey(alert))
+	})
+}

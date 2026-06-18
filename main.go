@@ -89,22 +89,21 @@ func main() {
 
 		// Pushover logic - skip anything already notified about
 		for _, p := range matches {
-			_, alreadySeen := seen[p.ID]
+			key := weather.VtecKey(p)
+			_, alreadySeen := seen[key]
 			if alreadySeen {
 				continue
 			}
-			// Pushover call
+
 			err := weather.SendPushover(client, pushoverURL, apiKey, userKey, p)
 			if err != nil {
 				slog.Error("pushover notification failed", "error", err)
 				continue
 			}
 
-			// Log successful Pushover
-			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "id", p.ID)
+			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "dedup_key", key)
 
-			// Add ID:expires to seen map after a sucessful Pushover notification
-			seen[p.ID] = p.Expires
+			seen[key] = p.Expires
 		}
 
 		time.Sleep(60 * time.Second)

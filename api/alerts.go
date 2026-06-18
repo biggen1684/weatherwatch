@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -21,21 +22,26 @@ type Feature struct {
 }
 
 type AlertProperties struct {
-	ID          string    `json:"id"`
-	Event       string    `json:"event"`
-	Severity    string    `json:"severity"`
-	Urgency     string    `json:"urgency"`
-	MessageType string    `json:"messageType"`
-	Status      string    `json:"status"`
-	Headline    string    `json:"headline"`
-	AreaDesc    string    `json:"areaDesc"`
-	Onset       time.Time `json:"onset"`
-	Expires     time.Time `json:"expires"`
-	Ends        time.Time `json:"ends"`
-	SenderName  string    `json:"senderName"`
-	Description string    `json:"description"`
-	Instruction string    `json:"instruction"`
-	Geocode     Geocode   `json:"geocode"`
+	ID          string          `json:"id"`
+	Event       string          `json:"event"`
+	Severity    string          `json:"severity"`
+	Urgency     string          `json:"urgency"`
+	MessageType string          `json:"messageType"`
+	Status      string          `json:"status"`
+	Headline    string          `json:"headline"`
+	AreaDesc    string          `json:"areaDesc"`
+	Onset       time.Time       `json:"onset"`
+	Expires     time.Time       `json:"expires"`
+	Ends        time.Time       `json:"ends"`
+	SenderName  string          `json:"senderName"`
+	Description string          `json:"description"`
+	Instruction string          `json:"instruction"`
+	Geocode     Geocode         `json:"geocode"`
+	Parameters  AlertParameters `json:"parameters"`
+}
+
+type AlertParameters struct {
+	VTEC []string `json:"VTEC"`
 }
 
 type Geocode struct {
@@ -196,4 +202,23 @@ func PruneSeenAlerts(seen SeenAlerts) SeenAlerts {
 		}
 	}
 	return pruned
+}
+
+// VTECKey extracts a stable dedup key from a VTEC string
+// e.g. "/O.EXT.KTAE.RP.S.0044.000000T0000Z-260622T0900Z/" → "KTAE.RP.S.0044"
+func VtecKey(alert AlertProperties) string {
+	if len(alert.Parameters.VTEC) == 0 {
+		return alert.ID // fallback to ID if no VTEC
+	}
+
+	vtec := alert.Parameters.VTEC[0]
+	// Strip leading/trailing slashes and split on dots
+	vtec = strings.Trim(vtec, "/")
+	parts := strings.Split(vtec, ".")
+	// Format is: O.ACTION.OFFICE.PHENOMENON.SIGNIFICANCE.EVENTNUMBER.TIMES
+	// We want parts[2]+"."+parts[3]+"."+parts[4]+"."+parts[5]
+	if len(parts) < 6 {
+		return alert.ID // fallback if format unexpected
+	}
+	return parts[2] + "." + parts[3] + "." + parts[4] + "." + parts[5]
 }
