@@ -100,7 +100,7 @@ func main() {
 			}
 
 			// Log successful Pushover
-			slog.Info("alert sent", "event", p.Event, "headline", p.Headline)
+			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "id", p.ID)
 
 			// Add ID:expires to seen map after a sucessful Pushover notification
 			seen[p.ID] = p.Expires
