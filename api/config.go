@@ -9,6 +9,7 @@ import (
 // Struct to hold config.toml fields
 type Config struct {
 	Zone      string   `toml:"zone"`
+	County    string   `toml:"county"`
 	Area      string   `toml:"area"`
 	UserAgent string   `toml:"user_agent"`
 	Events    []string `toml:"events"`
@@ -61,6 +62,9 @@ func validateConfig(cfg Config) error {
 	}
 	if cfg.Zone == "" {
 		return fmt.Errorf("NWS Zone is missing from config.toml — run with -zip to find your NWS Zone")
+	}
+	if cfg.County == "" {
+		return fmt.Errorf("county is missing — run with -zip to find your NWS county code")
 	}
 
 	return nil

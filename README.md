@@ -5,11 +5,11 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 ## Features
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
-- Filters alerts by NWS zone code and event type (e.g. Tornado Warning, Flash Flood Warning)
+- Filters alerts by user configurable NWS zone code and event type (e.g. Tornado Warning, Flash Flood Warning)
 - Sends push notifications to your phone via Pushover when a new matching alert is found
 - Avoids duplicate notifications for alerts already seen, using an in-memory cache with automatic expiration
-- Looks up your NWS zone code from a zip code (no need to know it ahead of time)
-- Lists all valid NWS alert event types so you know what to put in your config
+- Looks up your NWS zone/county code from a zip code (no need to know them ahead of time)
+- Lists all valid NWS alert event types so you know what events to put in your config
 - Structured logging to a file for unattended/daemon operation
 
 ## Requirements
@@ -25,7 +25,7 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
  
 Download the latest Linux binary from the [Releases](https://github.com/biggen1684/weatherwatch/releases) page.
  
-> **Note:** weatherwatch is currently only tested and distributed for Linux. It relies on environment variables for configuration secrets, and Windows handles these differently (`setx` or the System Properties GUI rather than `export`). Windows support hasn't been tested — building from source on Windows may work, but isn't guaranteed.
+> **Note:** weatherwatch is currently only tested and distributed for Linux. It relies on environment variables for configuration secrets and Windows handles these differently (`setx` or the System Properties GUI rather than `export`). Windows support hasn't been tested — building from source on Windows may work, but isn't guaranteed.
 
 ### Build from source
  
@@ -47,7 +47,7 @@ weatherwatch requires three environment variables to be set. These are not store
 | `PUSHOVER_USER_KEY` | Your Pushover User Key |
 | `WEATHERWATCH_USER_AGENT` | A contact string sent to the NWS API, e.g. `weatherwatch (you@example.com)` |
 
-NWS requires a `User-Agent` header identifying who's making requests, in case they need to reach you about unusual traffic. Use your own email — don't reuse a placeholder.
+NWS requires a `User-Agent` header identifying who's making requests in case they need to reach you about unusual traffic. Use your own email — don't reuse a placeholder.
 
 Set them in your shell profile (`~/.bashrc`, `~/.profile`) so that they are persistant and will survive across reboots or export them before running for a one off:
 
@@ -75,10 +75,13 @@ cp config.example.toml config.toml
 
 ```toml
 # Two-letter state abbreviation (or NWS marine area code)
-area = "FL"
+area = "CA"
 
 # Your NWS forecast zone code — see "Finding Your Zone" below
-zone = "FLZ112"
+zone = "CAZ368"
+
+# Your NWS forecast county code — see "Finding Your Zone" below
+county = "CAC037"
 
 # Event types to notify on — see "Listing Valid Events" below
 events = [
@@ -125,7 +128,7 @@ Runs continuously, polling NWS every 60 seconds, sending Pushover notifications 
 
 | Flag | Description |
 |---|---|
-| `-zip <zipcode>` | Look up your NWS zone code from a zip code, then exit |
+| `-zip <zipcode>` | Look up your NWS zone/county codes from a zip code, then exit |
 | `-listevents` | Print all valid NWS alert event type strings, then exit |
 | `-print` | Fetch alerts, print any matching your config, then exit (no notifications sent) |
 | `-debug` | Print raw API responses for troubleshooting |

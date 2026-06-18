@@ -35,13 +35,14 @@ func main() {
 
 	// Convert zip to lat/long if zip flag is sent in - End program after
 	if *zip != "" {
-		zone, err := weather.LookupZone(client, zipURL, pointsURL, *zip, *debug)
+		zone, county, err := weather.LookupZone(client, zipURL, pointsURL, *zip, *debug)
 		if err != nil {
 			fmt.Printf("Error: %v.\n", err)
 			return
 		}
-		fmt.Printf("Your NWS Zone is %s:\n", zone)
-		fmt.Println("Add this to the 'zone' field in config.toml")
+		fmt.Printf("Your NWS Zone is: %s\n", zone)
+		fmt.Printf("Your NWS County is: %s\n", county)
+		fmt.Println("Add both to their respective fields in config.toml")
 		return
 	}
 
