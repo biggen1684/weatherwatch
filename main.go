@@ -27,7 +27,7 @@ func main() {
 
 	client := &http.Client{Timeout: 30 * time.Second}
 
-	zip := flag.String("zip", "", "Zip code to look up your NWS Zone (e.g. -zip 32547)")
+	zip := flag.String("zip", "", "Zip code to look up your NWS zone/county codes (e.g. -zip 32547)")
 	listevents := flag.Bool("listevents", false, "List all valid NWS alert event types")
 	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")
 	print := flag.Bool("print", false, "Print alerts matching your configured zone and events, then exit")

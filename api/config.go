@@ -61,10 +61,10 @@ func validateConfig(cfg Config) error {
 		return fmt.Errorf("events are missing from config.toml - run with -listevents to find all valid events available")
 	}
 	if cfg.Zone == "" {
-		return fmt.Errorf("NWS Zone is missing from config.toml — run with -zip to find your NWS Zone")
+		return fmt.Errorf("zone is missing from config.toml — run with -zip to find your NWS Zone")
 	}
 	if cfg.County == "" {
-		return fmt.Errorf("county is missing — run with -zip to find your NWS county code")
+		return fmt.Errorf("county code is missing — run with -zip to find your NWS county code")
 	}
 
 	return nil

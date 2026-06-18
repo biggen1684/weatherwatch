@@ -5,7 +5,7 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 ## Features
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
-- Filters alerts by user configurable NWS zone code and event type (e.g. Tornado Warning, Flash Flood Warning)
+- Filters alerts by user configurable NWS zone/county code and event type (e.g. Tornado Warning, Flash Flood Warning)
 - Sends push notifications to your phone via Pushover when a new matching alert is found
 - Avoids duplicate notifications for alerts already seen, using an in-memory cache with automatic expiration
 - Looks up your NWS zone/county code from a zip code (no need to know them ahead of time)
@@ -100,7 +100,7 @@ If you don't know your NWS zone code, run weatherwatch with the `-zip` flag and 
 ./weatherwatch -zip 90210
 ```
 
-This looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone code. Add it to the `zone` field in `config.toml`.
+This looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone/county codes. You have to add both the zone and county codes to `zone` and `county` fields in `config.toml`.
 
 > **Note:** zip-code-to-coordinate lookups use the geographic centroid of the zip code's boundary. For zip codes covering narrow areas like barrier islands, this can occasionally resolve to a marine zone instead of land. weatherwatch will warn you if this happens — try another nearby zip code if this happens.
 
