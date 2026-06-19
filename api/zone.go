@@ -92,7 +92,7 @@ func latLonToZone(client *http.Client, pointsURL string, userAgent string, lat s
 
 	// If zip corresponds to a marine zone, notify the user
 	if response.Properties.Type == "marine" {
-		return zone, county, fmt.Errorf("this zip resolved to a marine zone (%s) and cannot be used.\nThe geocoded coordinate likely fell over water — try a nearby inland zip instead.\nYour zip code must resolve to both a land zone and county code", zone)
+		return zone, county, fmt.Errorf("this zip resolved to a marine zone (%s) and cannot be used.\nThe geocoded coordinate likely fell over water — try a nearby inland zip instead.\nTo find a nearby inland zip visit maps.google.com, click a point on land near your location, and look up that area's zip code", zone)
 	}
 	return zone, county, nil
 }
