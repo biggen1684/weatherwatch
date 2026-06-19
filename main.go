@@ -101,9 +101,18 @@ func main() {
 				continue
 			}
 
-			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "dedup_key", key)
+			// Use the event end time if available, as it represents when the weather event actually ends.
+			// p.Expires is when the NWS message version expires (often only a few hours),
+			// while p.Ends is when the actual weather event ends (could be days away).
+			// Falling back to p.Expires if p.Ends is zero (not set) or earlier than p.Expires.
+			seenExpiry := p.Expires
+			if !p.Ends.IsZero() && p.Ends.After(p.Expires) {
+				seenExpiry = p.Ends
+			}
+			seen[key] = seenExpiry
 
-			seen[key] = p.Expires
+			// Log either the p.Ends or p.Expires time in addition to other information
+			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "dedup_key", key, "seen_until", seenExpiry)
 		}
 
 		time.Sleep(60 * time.Second)
