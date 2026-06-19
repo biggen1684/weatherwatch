@@ -17,13 +17,8 @@ const pushoverURL = "https://api.pushover.net/1/messages.json"
 
 func main() {
 
-	// Setup logger for output of logs
-	logFile, err := weather.SetupLogger("weatherwatch.log")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	defer logFile.Close()
+	// Setup logger for output of logs to stdout
+	weather.SetupLogger()
 
 	client := &http.Client{Timeout: 30 * time.Second}
 
