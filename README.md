@@ -1,6 +1,6 @@
 # weatherwatch
 
-A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in a specific zone and sends push notifications via [Pushover](https://pushover.net) when a configured alert type is issued.
+A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in a specific land zone and sends push notifications via [Pushover](https://pushover.net) when a configured alert type is issued.
 
 > ⚠️ **Disclaimer:** weatherwatch is a personal learning project intended for educational and recreational use only. It should not be relied upon as a primary source of severe weather alerts or for any life-safety decisions. Always monitor official sources such as the [National Weather Service](https://www.weather.gov), local emergency management agencies, and NOAA Weather Radio for authoritative, real-time severe weather information. The developer makes no guarantees regarding the accuracy, timeliness, or completeness of alerts delivered by this application.
 
@@ -49,7 +49,7 @@ weatherwatch requires three environment variables to be set. These are not store
 | `PUSHOVER_USER_KEY` | Your Pushover User Key |
 | `WEATHERWATCH_USER_AGENT` | A contact string sent to the NWS API, e.g. `weatherwatch (you@example.com)` |
 
-NWS requires a `User-Agent` header identifying who's making requests in case they need to reach you about unusual traffic. Use your own email — don't reuse a placeholder.
+NWS requires a `User-Agent` header identifying who's making requests in case they need to reach you about unusual traffic. Use your own email — don't reuse a placeholder. Eventually, they will require an API key as per their own [authentication documentation](https://www.weather.gov/documentation/services-web-api).
 
 Set them in your shell profile (`~/.bashrc`, `~/.profile`) so that they are persistant and will survive across reboots or export them before running for a one off:
 
@@ -76,7 +76,9 @@ cp config.example.toml config.toml
 `config.toml` fields:
 
 ```toml
-# Two-letter state abbreviation (or NWS marine area code)
+# Two-letter state abbreviation for your location (e.g. FL, AL, GA).
+# Note: weatherwatch is designed for land-based alerts only. NWS marine
+# area codes are not supported.
 area = "CA"
 
 # Your NWS forecast zone code — see "Finding Your Zone" below
@@ -165,7 +167,7 @@ Logged events:
 - Startup/configuration failures
 - Failed connections to the NWS API
 - Failed Pushover notifications
-- Successfully sent notifications (event type, headline, alert ID)
+- Successfully sent notifications (event type, headline, alert ID, event expiration)
 - No log rotation currently. You must manually delete/prune. (Coming soon!)
 
 ### Project structure
