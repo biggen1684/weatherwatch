@@ -1,9 +1,18 @@
-# Rename this to config.toml after adding in the below settings.
-
-# Run with -zip to find your local NWS office by your zipcode and then add the zone code AND county code returned below.
-zone = "CAZ368"
-county = "CAC037"
-# Add your two letter state abbreviation below.  NWS marine codes are also valid. See README.
+# Two-letter state abbreviation for your location (e.g. FL, AL, GA). 
+# Note: weatherwatch is designed for land-based alerts only.
+# NWS marine area codes are not supported. 
 area = "CA"
-# Run with -listevents to see all the events available to filter for and add the desired events below inside quotes and comma separated.
-events = ["Beach Hazards Statement", "Coastal Flood Advisory", "Coastal Flood Statement"]
+
+# Your NWS forecast zone code — see "Finding Your Zone" in README
+zone = "CAZ368"
+
+# Your NWS forecast county code — see "Finding Your Zone" in README
+county = "CAC037"
+
+# Event types to notify on — see "Listing Valid Events" in README
+events = [
+    "Tornado Warning",
+    "Severe Thunderstorm Warning",
+    "Flash Flood Warning",
+    "Hurricane Warning"
+]

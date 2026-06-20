@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	weather "github.com/biggen1684/weatherwatch/api"
@@ -18,7 +19,8 @@ const pushoverURL = "https://api.pushover.net/1/messages.json"
 func main() {
 
 	// Setup logger for output of logs to stdout
-	weather.SetupLogger()
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 

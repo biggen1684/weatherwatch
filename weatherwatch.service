@@ -1,0 +1,16 @@
+[Unit]
+Description=weatherwatch - NWS severe weather alert daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/weatherwatch
+ExecStart=/home/user/weatherwatch/weatherwatch
+EnvironmentFile=/home/user/weatherwatch/.env
+Restart=on-failure
+RestartSec=10
+User=joe
+
+[Install]
+WantedBy=multi-user.target
