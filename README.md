@@ -1,18 +1,19 @@
 # weatherwatch
 
-A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in a NWS forecast  zone and sends push notifications via [Pushover](https://pushover.net) when a configured alert type is issued.
+A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in a NWS forecast zone, sending push notifications via [Pushover](https://pushover.net) and structured JSON to stdout when a configured alert type is issued.
 
 > ⚠️ **Disclaimer:** weatherwatch is a personal learning project intended for educational and recreational use only. It should not be relied upon as a primary source of severe weather alerts or for any life-safety decisions. Always monitor official sources such as the [National Weather Service](https://www.weather.gov), local emergency management agencies, and NOAA Weather Radio for authoritative, real-time severe weather information. The developer makes no guarantees regarding the accuracy, timeliness, or completeness of alerts delivered by this application.
 
 ## Features
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
+- Outputs the full matched alert as JSON to stdout for every new notification. Suitable for piping into other tools.
 - Filters alerts by user configurable NWS zone/county code and event type (e.g. Tornado Warning, Flash Flood Warning)
 - Sends push notifications to your phone via Pushover when a new matching alert is found
 - Avoids duplicate notifications for alerts already seen using an in-memory cache with automatic expiration
 - Looks up your NWS zone/county code from a zip code (no need to know them ahead of time)
 - Lists all valid NWS alert event types so you know what events to put in your config
-- Structured logging to stdout, designed to run as a systemd service with automatic log capture via journald
+- Structured logging to stderr, designed to run as a systemd service with automatic log capture via journald
 
 ## Requirements
  

@@ -93,7 +93,8 @@ func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
 	}
 
 	var types AlertTypesResponse
-	if err := json.Unmarshal(body, &types); err != nil {
+	err = json.Unmarshal(body, &types)
+	if err != nil {
 		return fmt.Errorf("unmarshal failed: %s", err)
 	}
 

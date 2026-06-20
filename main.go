@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -18,8 +19,8 @@ const pushoverURL = "https://api.pushover.net/1/messages.json"
 
 func main() {
 
-	// Setup logger for output of logs to stdout
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	// Setup logger for output of errors to stderr
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 
 	// Setup http client
@@ -112,6 +113,14 @@ func main() {
 
 			// Log either the p.Ends or p.Expires time in addition to other information
 			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "dedup_key", key, "seen_until", seenExpiry)
+
+			// Output the full alert as JSON to stdout for downstream consumers
+			data, err := json.Marshal(p)
+			if err != nil {
+				slog.Error("json marshal failed", "error", err)
+				continue
+			}
+			fmt.Println(string(data))
 		}
 
 		time.Sleep(60 * time.Second)
