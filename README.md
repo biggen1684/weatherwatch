@@ -245,15 +245,32 @@ nohup ./weatherwatch &
 
 ## Logging
 
-weatherwatch writes structured logs to stdout using Go's `log/slog`. This is separate from the one-shot utility flags (`-zip`, `-listevents`, `-print`), which print directly to the console since they're interactive commands.
+weatherwatch writes structured logs to **stderr** using Go's `log/slog`. Matched alert data is written to **stdout** as JSON (see [JSON Output](#json-output) below). Keeping these on separate streams means you can pipe or redirect the alert data independently from the logs. This is separate from the one-shot utility flags (`-zip`, `-listevents`, `-print`), which print directly to the console since they're interactive commands.
 
-When run directly or under `screen`/`nohup`, logs appear in the terminal. When run under systemd, journald captures stdout automatically — view logs with `journalctl -u weatherwatch -f`. journald also handles log rotation and retention on its own, so no manual log management is needed.
+When run directly or under `screen`/`nohup`, both streams appear interleaved in the terminal by default. When run under systemd, journald captures both stdout and stderr automatically — view combined logs with `journalctl -u weatherwatch -f`. journald also handles log rotation and retention on its own, so no manual log management is needed.
 
 Logged events:
+
 - Startup/configuration failures
 - Failed connections to the NWS API
 - Failed Pushover notifications
 - Successfully sent notifications (event type, headline, alert ID, event expiration)
+
+## JSON Output
+
+For every new (non-duplicate) matching alert, weatherwatch writes the full alert object as a single line of JSON to stdout, alongside sending the Pushover notification. This makes it easy to pipe weatherwatch's output into other tools:
+
+```bash
+./weatherwatch | jq '.headline'
+```
+
+Since logs go to stderr and alert data goes to stdout, you can capture them separately:
+
+```bash
+./weatherwatch > alerts.jsonl 2> weatherwatch.log
+```
+
+Each JSON line contains the full decoded NWS alert — event type, severity, headline, description, affected zones, VTEC parameters, and timing fields (`onset`, `expires`, `ends`).
 
 ## Project structure
 

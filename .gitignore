@@ -1,6 +1,7 @@
 # Compiled binary (module is named "weatherwatch")
 weatherwatch
 weatherwatch.exe
+*-linux-amd64
 
 # Test binaries
 *.test
