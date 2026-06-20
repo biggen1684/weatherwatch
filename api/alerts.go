@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
+	"text/tabwriter"
 	"time"
 )
 
@@ -95,10 +97,18 @@ func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
 		return fmt.Errorf("unmarshal failed: %s", err)
 	}
 
+	// Print output using tabwriter so we don't get one giant column of output
 	fmt.Print("The following are all valid Alert Event types for the NWS:\n\n")
-	for _, v := range types.EventTypes {
-		fmt.Println(v)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	for i, v := range types.EventTypes {
+		fmt.Fprintf(w, "%s\t", v)
+		if (i+1)%3 == 0 { // new row every 3 entries (i is 0-indexed, so +1)
+			fmt.Fprintln(w)
+		}
 	}
+	fmt.Fprintln(w) // ensure trailing newline after the final partial row
+	w.Flush()
+	fmt.Println("Please input at least one of the above alerts into your confing.toml file.")
 	return nil
 }
 

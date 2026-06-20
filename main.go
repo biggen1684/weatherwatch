@@ -22,8 +22,10 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
+	// Setup http client
 	client := &http.Client{Timeout: 30 * time.Second}
 
+	// Configure runtime flags
 	zip := flag.String("zip", "", "Zip code to look up your NWS zone/county codes (e.g. -zip 32547)")
 	listevents := flag.Bool("listevents", false, "List all valid NWS alert event types")
 	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")

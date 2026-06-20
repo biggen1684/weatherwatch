@@ -47,6 +47,7 @@ export WEATHERWATCH_USER_AGENT="weatherwatch (you@example.com)"
 ```bash
 cp config.example.toml config.toml
 ./weatherwatch -zip <your_zip_code>
+./weatherwatch -listevents
 nano config.toml
 ```
 
@@ -77,7 +78,7 @@ go build -o weatherwatch .
 
 ### Environment Variables
 
-weatherwatch requires three environment variables to be set. These are not stored in `config.toml` since they're either secrets or identifiers tied to your specific deployment.
+weatherwatch requires three environment variables to be set. These are not stored in `config.toml` since these are secrets.
 
 | Variable | Purpose |
 |---|---|
@@ -87,7 +88,7 @@ weatherwatch requires three environment variables to be set. These are not store
 
 >**Note:** NWS requires a `User-Agent` header identifying who's making requests in case they need to reach you about unusual traffic. Technically, you can put just about anything here including a fake email.  However, they will eventually require an API key per their own [authentication documentation](https://www.weather.gov/documentation/services-web-api) which can be included in this field in the future.
 
-The location you store these three environment variables will depend on your chosen method of running the program.  
+The location you store these three environment variables will depend on your chosen method of running the program:  
 
 **1. Running directly (shell, screen, nohup):** Set these in your shell profile (`~/.bashrc`, `~/.profile`) so they persist across reboots, or export them before running for a one-off:
 
