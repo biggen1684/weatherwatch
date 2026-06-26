@@ -188,6 +188,10 @@ func FilterAlerts(alerts AlertResponse, cfg Config) []AlertProperties {
 
 // Prints alerts to the screen if flag is sent - Useful for seeing alerts without firing off notifications
 func PrintMatchingAlerts(matches []AlertProperties) {
+	if len(matches) == 0 {
+		fmt.Println("There are no current NWS alerts for your area.")
+		return
+	}
 	for _, v := range matches {
 		fmt.Println("--- Matching Alert ---")
 		fmt.Println("Event: ", v.Event)

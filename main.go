@@ -30,8 +30,26 @@ func main() {
 	zip := flag.String("zip", "", "Zip code to look up your NWS zone/county codes (e.g. -zip 32547)")
 	listevents := flag.Bool("listevents", false, "List all valid NWS alert event types")
 	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")
-	print := flag.Bool("print", false, "Print alerts matching your configured zone and events, then exit")
+	print := flag.Bool("print", false, "Print alerts matching your configured zone and events then exit")
+	test := flag.Bool("test", false, "Checks Pushover settings are valid.")
 	flag.Parse()
+
+	// Test pushover api and user keys for connectivity
+	if *test {
+		apiKey, userKey, _, err := weather.PreRunSetup()
+		if err != nil {
+			fmt.Printf("Error: %v.\n", err)
+			slog.Error("pre-run setup failed", "error", err)
+			return
+		}
+		err = weather.SendPushoverTest(client, pushoverURL, apiKey, userKey)
+		if err != nil {
+			fmt.Printf("Error sending test notification: %v.\n", err)
+			return
+		}
+		fmt.Println("Test notification sent successfully — check your Pushover app.")
+		return
+	}
 
 	// Convert zip to lat/long if zip flag is sent in - End program after
 	if *zip != "" {

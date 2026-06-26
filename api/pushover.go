@@ -53,3 +53,13 @@ func SendPushover(client *http.Client, pushoverURL string, apiKey string, userKe
 
 	return nil
 }
+
+// Wrapper function that creates a fake alert when the -test flag is used
+func SendPushoverTest(client *http.Client, pushoverURL string, apiKey string, userKey string) error {
+	testAlert := AlertProperties{
+		Headline:    "weatherwatch test notification",
+		Description: "If you received this, your Pushover API key and User key are configured correctly.",
+		AreaDesc:    "weatherwatch",
+	}
+	return SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+}

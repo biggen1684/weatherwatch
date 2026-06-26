@@ -77,6 +77,14 @@ cd weatherwatch
 go build -o weatherwatch .
 ```
 
+### Pushover Setup
+
+1. Create a free account at [pushover.net](https://pushover.net)
+2. Your **User Key** is shown on your dashboard after logging in.
+3. Create an **Application** (also from the dashboard) to get an **API Token** — this becomes `PUSHOVER_API_KEY`.
+4. Add these as Environment Variables (instructions below)
+5. Run with `-test` flag to check if test Pushover alerts was successfully sent.
+
 ### Environment Variables
 
 weatherwatch requires three environment variables to be set. These are not stored in `config.toml` since these are secrets.
@@ -100,12 +108,6 @@ export WEATHERWATCH_USER_AGENT="weatherwatch (you@example.com)"
 ```
 
 **2. Running via systemd:**  See [Running Long-Term](#running-long-term) below.
-
-### Pushover Setup
-
-1. Create a free account at [pushover.net](https://pushover.net)
-2. Your **User Key** is shown on your dashboard after logging in
-3. Create an **Application** (also from the dashboard) to get an **API Token** — this becomes `PUSHOVER_API_KEY`
 
 ### Configuration
 
@@ -178,8 +180,9 @@ Runs continuously, polling NWS every 60 seconds, sending Pushover notifications 
 | `-listevents` | Print all valid NWS alert event type strings, then exit |
 | `-print` | Fetch alerts, print any matching your config, then exit (no notifications sent) |
 | `-debug` | Print raw API responses for troubleshooting |
+| `-test` | Sends test message to Pushover to determine if API and User keys are setup correctly |
 
-`-zip`, `-listevents`, and `-print` are one-shot utility commands — none of them start the long-running daemon loop.
+`-zip`, `-listevents`, `-print`, and `-test` are one-shot utility commands — none of them start the long-running daemon loop.
 
 ### Running Long-Term
 
@@ -289,10 +292,6 @@ weatherwatch/
     ├── alerts.go            # NWS alert fetching, filtering, seen-alert tracking
     ├── pushover.go          # Pushover notification sending
 ```
-
-## Logic Flow
-
-![weatherwatch flow](weatherwatch_flow.svg)
 
 ## License
 
