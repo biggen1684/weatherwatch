@@ -41,7 +41,6 @@ func main() {
 		apiKey, userKey, _, err := weather.PreRunSetup()
 		if err != nil {
 			fmt.Printf("Error: %v.\n", err)
-			slog.Error("pre-run setup failed", "error", err)
 			return
 		}
 		err = weather.SendPushoverTest(client, pushoverURL, apiKey, userKey)
