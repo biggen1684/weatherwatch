@@ -66,12 +66,22 @@ func SendPushoverTest(client *http.Client, pushoverURL string, apiKey string, us
 }
 
 // Wrapper functions that sends an alert that weatherwatch is shutting down
-func SendPushoverShutdown(client *http.Client, pushoverURL string, apiKey string, userKey string) {
+func SendPushoverShutdown(client *http.Client, pushoverURL string, apiKey string, userKey string) error {
 	testAlert := AlertProperties{
 		Headline:    "Shutting down weatherwatch",
 		Description: "Weatherwatch has exited. Please restart if you wish to get alerts again.",
 		AreaDesc:    "weatherwatch",
 	}
-	_ = SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+	err := SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+	return err
+}
 
+func SendPushoverStartup(client *http.Client, pushoverURL string, apiKey string, userKey string) error {
+	testAlert := AlertProperties{
+		Headline:    "Starting up weatherwatch",
+		Description: "Weatherwatch has started and is actively polling the NWS for alerts.",
+		AreaDesc:    "weatherwatch",
+	}
+	err := SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+	return err
 }

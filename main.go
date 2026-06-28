@@ -92,9 +92,19 @@ func main() {
 	go func() {
 		sig := <-sigChan
 		slog.Info("shutting down weatherwatch", "signal", sig)
-		weather.SendPushoverShutdown(client, pushoverURL, apiKey, userKey)
+		err := weather.SendPushoverShutdown(client, pushoverURL, apiKey, userKey)
+		if err != nil {
+			slog.Error("pushover shutdown notification failed", "error", err)
+
+		}
 		os.Exit(0)
 	}()
+
+	// Send startup alert once to let user know weatherwatch is running
+	err = weather.SendPushoverStartup(client, pushoverURL, apiKey, userKey)
+	if err != nil {
+		slog.Error("pushover startup notification failed", "error", err)
+	}
 
 	// Declare empty variable here pre-loop to set and compare later
 	seen := weather.SeenAlerts{}
