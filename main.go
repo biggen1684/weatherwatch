@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	weather "github.com/biggen1684/weatherwatch/api"
@@ -82,6 +84,18 @@ func main() {
 		return
 	}
 
+	// Setup signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	// Go routine to catch SIGTERM OR SIGINT and send Pushover notification to user to let them know program is exiting
+	go func() {
+		sig := <-sigChan
+		slog.Info("shutting down weatherwatch", "signal", sig)
+		weather.SendPushoverShutdown(client, pushoverURL, apiKey, userKey)
+		os.Exit(0)
+	}()
+
 	// Declare empty variable here pre-loop to set and compare later
 	seen := weather.SeenAlerts{}
 
@@ -103,6 +117,7 @@ func main() {
 			return
 		}
 
+		// Remove alerts for entries that have expired
 		seen = weather.PruneSeenAlerts(seen)
 
 		// Pushover logic - skip anything already notified about
@@ -113,6 +128,7 @@ func main() {
 				continue
 			}
 
+			// Send alerts to Pushover
 			err := weather.SendPushover(client, pushoverURL, apiKey, userKey, p)
 			if err != nil {
 				slog.Error("pushover notification failed", "error", err)
