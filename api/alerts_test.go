@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -147,5 +148,82 @@ func TestConnectNOAA(t *testing.T) {
 
 		_, err := ConnectNOAA(http.DefaultClient, "https://example.com/alerts/", mockLocation, false)
 		assert.Error(t, err)
+	})
+}
+
+func TestEffectiveExpiry(t *testing.T) {
+	now := time.Now()
+	future := now.Add(24 * time.Hour)
+	furtherFuture := now.Add(48 * time.Hour)
+
+	t.Run("returns Ends when it is after Expires", func(t *testing.T) {
+		p := AlertProperties{
+			Expires: future,
+			Ends:    furtherFuture,
+		}
+		assert.Equal(t, furtherFuture, EffectiveExpiry(p))
+	})
+
+	t.Run("returns Expires when Ends is zero", func(t *testing.T) {
+		p := AlertProperties{
+			Expires: future,
+			Ends:    time.Time{},
+		}
+		assert.Equal(t, future, EffectiveExpiry(p))
+	})
+
+	t.Run("returns Expires when Ends is before Expires", func(t *testing.T) {
+		p := AlertProperties{
+			Expires: furtherFuture,
+			Ends:    future,
+		}
+		assert.Equal(t, furtherFuture, EffectiveExpiry(p))
+	})
+
+	t.Run("returns Expires when Ends equals Expires", func(t *testing.T) {
+		p := AlertProperties{
+			Expires: future,
+			Ends:    future,
+		}
+		assert.Equal(t, future, EffectiveExpiry(p))
+	})
+}
+
+func TestShouldNotify(t *testing.T) {
+	now := time.Now()
+	future := now.Add(24 * time.Hour)
+	furtherFuture := now.Add(48 * time.Hour)
+
+	t.Run("new alert not in seen should notify", func(t *testing.T) {
+		seen := SeenAlerts{}
+		assert.True(t, ShouldNotify(seen, "Home.KTAE.RP.S.0044", future))
+	})
+
+	t.Run("already seen with same expiry should not notify", func(t *testing.T) {
+		seen := SeenAlerts{
+			"Home.KTAE.RP.S.0044": future,
+		}
+		assert.False(t, ShouldNotify(seen, "Home.KTAE.RP.S.0044", future))
+	})
+
+	t.Run("already seen with earlier expiry should not notify", func(t *testing.T) {
+		seen := SeenAlerts{
+			"Home.KTAE.RP.S.0044": furtherFuture,
+		}
+		assert.False(t, ShouldNotify(seen, "Home.KTAE.RP.S.0044", future))
+	})
+
+	t.Run("already seen but expiry extended should notify", func(t *testing.T) {
+		seen := SeenAlerts{
+			"Home.KTAE.RP.S.0044": future,
+		}
+		assert.True(t, ShouldNotify(seen, "Home.KTAE.RP.S.0044", furtherFuture))
+	})
+
+	t.Run("different key not in seen should notify", func(t *testing.T) {
+		seen := SeenAlerts{
+			"Home.KTAE.RP.S.0044": future,
+		}
+		assert.True(t, ShouldNotify(seen, "Home.KTAE.TO.W.0001", future))
 	})
 }

@@ -231,3 +231,25 @@ func VtecKey(alert AlertProperties) string {
 	}
 	return parts[2] + "." + parts[3] + "." + parts[4] + "." + parts[5]
 }
+
+// EffectiveExpiry returns the timestamp that should be used to track when an
+// alert is no longer relevant for deduplication. Prefers p.Ends (the actual
+// weather event end) over p.Expires (the NWS message version's expiry), since
+// Expires is often only a few hours while Ends can be days away.
+func EffectiveExpiry(p AlertProperties) time.Time {
+	if !p.Ends.IsZero() && p.Ends.After(p.Expires) {
+		return p.Ends
+	}
+	return p.Expires
+}
+
+// ShouldNotify returns true if this alert has not been seen before, or if its
+// effective expiry has been extended since it was last seen (e.g. NWS extended
+// an active Flood Watch to a later date).
+func ShouldNotify(seen SeenAlerts, key string, incomingExpiry time.Time) bool {
+	storedExpiry, alreadySeen := seen[key]
+	if alreadySeen && !incomingExpiry.After(storedExpiry) {
+		return false
+	}
+	return true
+}

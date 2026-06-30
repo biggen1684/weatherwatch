@@ -128,6 +128,7 @@ func main() {
 	// Declare empty variable here pre-loop to set and compare later
 	seen := weather.SeenAlerts{}
 
+	// Main daemon loop
 	for {
 		// Iterate over each configured location
 		for _, loc := range cfg.Locations {
@@ -141,11 +142,16 @@ func main() {
 			// Filter alerts returned for either printing or Pushover
 			matches := weather.FilterAlerts(alerts, loc, cfg.Events)
 
-			// Pushover logic - skip anything already notified about
+			// Pushover logic - notify on new alerts or on existing alerts whose end time has been extended
 			for _, p := range matches {
+				// Build a dedup key unique to this location and alert event
 				key := loc.Name + "." + weather.VtecKey(p)
-				_, alreadySeen := seen[key]
-				if alreadySeen {
+
+				// Determine the effective end time for this alert (favors p.Ends over p.Expires)
+				incomingExpiry := weather.EffectiveExpiry(p)
+
+				// Skip if already notified and the end time hasn't extended further
+				if !weather.ShouldNotify(seen, key, incomingExpiry) {
 					continue
 				}
 
@@ -156,20 +162,13 @@ func main() {
 					continue
 				}
 
-				// Use the event end time if available, as it represents when the weather event actually ends.
-				// p.Expires is when the NWS message version expires (often only a few hours),
-				// while p.Ends is when the actual weather event ends (could be days away).
-				// Falling back to p.Expires if p.Ends is zero (not set) or earlier than p.Expires.
-				seenExpiry := p.Expires
-				if !p.Ends.IsZero() && p.Ends.After(p.Expires) {
-					seenExpiry = p.Ends
-				}
-				seen[key] = seenExpiry
+				// Update seen map with the latest known end time for this alert
+				seen[key] = incomingExpiry
 
-				// Log either the p.Ends or p.Expires time in addition to other information
-				slog.Info("alert sent", "event", p.Event, "location", loc.Name, "headline", p.Headline, "dedup_key", key, "seen_until", seenExpiry)
+				// Log successful Pushover notification
+				slog.Info("alert sent", "event", p.Event, "location", loc.Name, "headline", p.Headline, "dedup_key", key, "seen_until", incomingExpiry)
 
-				// Output the full alert as JSON to stdout for downstream consumers
+				// Marshal the full alert to JSON and write it to stdout for downstream consumers
 				data, err := json.Marshal(p)
 				if err != nil {
 					slog.Error("json marshal failed", "error", err)
@@ -187,6 +186,7 @@ func main() {
 		// Remove alerts for entries that have expired
 		seen = weather.PruneSeenAlerts(seen)
 
+		// Sleep for 60 seconds before looping again
 		time.Sleep(60 * time.Second)
 	}
 }
