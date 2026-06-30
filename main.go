@@ -118,6 +118,8 @@ func main() {
 	err = weather.SendPushoverStartup(client, pushoverURL, apiKey, userKey)
 	if err != nil {
 		slog.Error("pushover startup notification failed", "error", err)
+	} else {
+		slog.Info("starting up weatherwatch")
 	}
 
 	// Brief pause to allow startup notification to deliver before first poll
