@@ -188,6 +188,7 @@ func PrintMatchingAlerts(matches []AlertProperties) {
 	for _, v := range matches {
 		fmt.Println("--- Matching Alert ---")
 		fmt.Println("Event: ", v.Event)
+		fmt.Println("Dedup Key: ", VtecKey(v))
 		fmt.Println("Severity: ", v.Severity)
 		fmt.Println("Headline: ", v.Headline)
 		fmt.Println("Description:")
