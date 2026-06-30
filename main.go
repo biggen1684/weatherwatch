@@ -120,6 +120,9 @@ func main() {
 		slog.Error("pushover startup notification failed", "error", err)
 	}
 
+	// Brief pause to allow startup notification to deliver before first poll
+	time.Sleep(2 * time.Second)
+
 	// Declare empty variable here pre-loop to set and compare later
 	seen := weather.SeenAlerts{}
 
