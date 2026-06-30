@@ -7,11 +7,12 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 ## Features
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
-- Outputs the full matched alert as JSON to stdout for every new notification. Suitable for piping into other tools.
+- Outputs the full matched alert as JSON to stdout for every new notification. Suitable for piping into other tools
 - Monitors one or more locations simultaneously, each with their own NWS zone and county code
 - Filters alerts by user configurable event type (e.g. Tornado Warning, Flash Flood Warning) — shared across all locations
-- Sends push notifications to your phone via Pushover when a new matching alert is found
-- Avoids duplicate notifications for alerts already seen using an in-memory cache with automatic expiration
+- Sends push notifications to your device via Pushover when a new matching alert is found
+- Avoids duplicate notifications for alerts already seen (except for extended alerts) using an in-memory cache with automatic expiration
+- Re-notifies if an active alert's expiration time is extended by NWS — ensuring you're always aware of the latest alert duration
 - Looks up your NWS zone/county code from a zip code (no need to know them ahead of time)
 - Lists all valid NWS alert event types so you know what events to put in your config
 - Structured logging to stderr, designed to run as a systemd service with automatic log capture via journald
@@ -277,6 +278,7 @@ Logged events:
 - Failed connections to the NWS API
 - Failed Pushover notifications
 - Successfully sent notifications (event type, location, headline, VTEC dedup key, event expiration)
+- Re-notifications when NWS extends an active alert's expiry (logged with updated `seen_until` value)
 
 ## JSON Output
 
