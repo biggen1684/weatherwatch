@@ -9,13 +9,13 @@ import (
 	"strings"
 )
 
-func SendPushover(client *http.Client, pushoverURL string, apiKey string, userKey string, alert AlertProperties) error {
+func SendPushover(client *http.Client, pushoverURL string, apiKey string, userKey string, locationName string, alert AlertProperties) error {
 
 	// Build POST form data
 	data := url.Values{}
 	data.Set("token", apiKey)
 	data.Set("user", userKey)
-	data.Set("title", alert.Headline)
+	data.Set("title", fmt.Sprintf("[%s] %s", locationName, alert.Headline))
 	// Pushover has a 1024 char limit. Make sure we truncate ourselves if we go over
 	// because Pushover will reject it if so
 	message := alert.Description + "\n\nArea: " + alert.AreaDesc
@@ -61,7 +61,7 @@ func SendPushoverTest(client *http.Client, pushoverURL string, apiKey string, us
 		Description: "If you received this, your Pushover API key and User key are configured correctly.",
 		AreaDesc:    "weatherwatch",
 	}
-	err := SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+	err := SendPushover(client, pushoverURL, apiKey, userKey, "weatherwatch", testAlert)
 	return err
 }
 
@@ -72,7 +72,7 @@ func SendPushoverShutdown(client *http.Client, pushoverURL string, apiKey string
 		Description: "Weatherwatch has exited. Please restart if you wish to get alerts again.",
 		AreaDesc:    "weatherwatch",
 	}
-	err := SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+	err := SendPushover(client, pushoverURL, apiKey, userKey, "weatherwatch", testAlert)
 	return err
 }
 
@@ -82,6 +82,6 @@ func SendPushoverStartup(client *http.Client, pushoverURL string, apiKey string,
 		Description: "Weatherwatch has started and is actively polling the NWS for alerts.",
 		AreaDesc:    "weatherwatch",
 	}
-	err := SendPushover(client, pushoverURL, apiKey, userKey, testAlert)
+	err := SendPushover(client, pushoverURL, apiKey, userKey, "weatherwatch", testAlert)
 	return err
 }

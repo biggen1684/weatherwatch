@@ -1,18 +1,18 @@
-# Two-letter state abbreviation for your location (e.g. FL, AL, GA). 
-# Note: weatherwatch is designed for land-based alerts only.
-# NWS marine area codes are not supported. 
+# Run with "-listevents" to see all NWS events available 
+# Events are shared between all locations
+events = [
+    "Beach Hazards Statement", "Coastal Flood Advisory", "Coastal Flood Statement"]
+
+# Add one [[locations]] block per area you want to monitor
+# Run with -zip to find your zone and county codes
+[[locations]]
+name = "Home"
 area = "CA"
-
-# Your NWS forecast zone code — see "Finding Your Zone" in README
 zone = "CAZ368"
-
-# Your NWS forecast county code — see "Finding Your Zone" in README
 county = "CAC037"
 
-# Event types to notify on — see "Listing Valid Events" in README
-events = [
-    "Tornado Warning",
-    "Severe Thunderstorm Warning",
-    "Flash Flood Warning",
-    "Hurricane Warning"
-]
+[[locations]]
+name = "Vacation Home"
+area = "AL"
+zone = "ALZ043"
+county = "ALC051"

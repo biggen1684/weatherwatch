@@ -113,15 +113,13 @@ func ListEventTypes(client *http.Client, alertsURL string, debug bool) error {
 	return nil
 }
 
-func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) (AlertResponse, error) {
-
-	// Get UserAgent is located in env.go
+// ConnectNOAA fetches active alerts from the NWS API for the configured location
+func ConnectNOAA(client *http.Client, alertsURL string, loc Location, debug bool) (AlertResponse, error) {
 	userAgent, err := getUserAgent()
 	if err != nil {
 		return AlertResponse{}, err
 	}
 
-	// Setup context, Get, and URL
 	url := alertsURL + "active"
 	req, err := http.NewRequestWithContext(context.Background(),
 		http.MethodGet, url, nil)
@@ -129,12 +127,10 @@ func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) 
 		return AlertResponse{}, fmt.Errorf("failed to build request %s", err)
 	}
 
-	// Build query to send to API
 	q := req.URL.Query()
-	q.Add("area", cfg.Area)
+	q.Add("area", loc.Area)
 	req.URL.RawQuery = q.Encode()
 
-	// Build the headers
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Accept", "application/geo+json")
 	res, err := client.Do(req)
@@ -143,24 +139,20 @@ func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) 
 	}
 	defer res.Body.Close()
 
-	// Read body
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return AlertResponse{}, fmt.Errorf("reading body: %s", err)
 	}
 
-	// Return any error messages the API sends
 	if res.StatusCode != http.StatusOK {
 		return AlertResponse{}, fmt.Errorf("API error %d: %s", res.StatusCode, string(body))
 	}
 
-	//Print raw body if debug flag true
 	if debug {
 		fmt.Printf("\nStatus code: %d\n", res.StatusCode)
 		fmt.Printf("\n--- Raw response from %s ---\n%s\n", url, string(body))
 	}
 
-	//Finally unmarshal into a slice containing the struct declared above
 	var alerts AlertResponse
 	err = json.Unmarshal(body, &alerts)
 	if err != nil {
@@ -169,19 +161,20 @@ func ConnectNOAA(client *http.Client, alertsURL string, cfg Config, debug bool) 
 	return alerts, nil
 }
 
-// Returns alerts matching the configured zone and events for printing or Pushover
-func FilterAlerts(alerts AlertResponse, cfg Config) []AlertProperties {
+// FilterAlerts returns alerts matching the configured location zone/county and events
+func FilterAlerts(alerts AlertResponse, loc Location, events []string) []AlertProperties {
 	var matches []AlertProperties
 	for _, f := range alerts.Features {
-		zoneMatch := slices.Contains(f.Properties.Geocode.UGC, cfg.Zone)
-		countyMatch := slices.Contains(f.Properties.Geocode.UGC, cfg.County)
+		p := f.Properties
+		zoneMatch := slices.Contains(p.Geocode.UGC, loc.Zone)
+		countyMatch := slices.Contains(p.Geocode.UGC, loc.County)
 		if !zoneMatch && !countyMatch {
 			continue
 		}
-		if !slices.Contains(cfg.Events, f.Properties.Event) {
+		if !slices.Contains(events, p.Event) {
 			continue
 		}
-		matches = append(matches, f.Properties)
+		matches = append(matches, p)
 	}
 	return matches
 }

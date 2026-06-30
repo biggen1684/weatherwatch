@@ -6,13 +6,18 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// Struct to hold config.toml fields
+// Location holds the configuration for a single NWS forecast zone to monitor
+type Location struct {
+	Name   string `toml:"name"`
+	Area   string `toml:"area"`
+	Zone   string `toml:"zone"`
+	County string `toml:"county"`
+}
+
+// Config holds all configuration settings loaded from config.toml
 type Config struct {
-	Zone      string   `toml:"zone"`
-	County    string   `toml:"county"`
-	Area      string   `toml:"area"`
-	UserAgent string   `toml:"user_agent"`
-	Events    []string `toml:"events"`
+	Locations []Location `toml:"locations"`
+	Events    []string   `toml:"events"`
 }
 
 func PreRunSetup() (string, string, Config, error) {
@@ -52,20 +57,27 @@ func loadConfig(path string) (Config, error) {
 	return cfg, nil
 }
 
-// Validate fields are filled in - Doesn't validate they are accurate!
+// validateConfig checks that all required fields are present
 func validateConfig(cfg Config) error {
-	if cfg.Area == "" {
-		return fmt.Errorf("area is missing from config.toml - must be a two letter state code")
+	if len(cfg.Locations) == 0 {
+		return fmt.Errorf("no locations defined in config.toml — add at least one [[locations]] block")
+	}
+	for i, loc := range cfg.Locations {
+		if loc.Name == "" {
+			return fmt.Errorf("location %d is missing a name", i+1)
+		}
+		if loc.Area == "" {
+			return fmt.Errorf("location %d (%s) is missing area", i+1, loc.Name)
+		}
+		if loc.Zone == "" {
+			return fmt.Errorf("location %d (%s) is missing zone", i+1, loc.Name)
+		}
+		if loc.County == "" {
+			return fmt.Errorf("location %d (%s) is missing county", i+1, loc.Name)
+		}
 	}
 	if len(cfg.Events) == 0 {
-		return fmt.Errorf("events are missing from config.toml - run with -listevents to find all valid events available")
+		return fmt.Errorf("events is missing from config.toml — add at least one event type")
 	}
-	if cfg.Zone == "" {
-		return fmt.Errorf("zone is missing from config.toml — run with -zip to find your NWS Zone")
-	}
-	if cfg.County == "" {
-		return fmt.Errorf("county code is missing — run with -zip to find your NWS county code")
-	}
-
 	return nil
 }

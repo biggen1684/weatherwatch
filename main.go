@@ -83,6 +83,21 @@ func main() {
 		return
 	}
 
+	// Handle -print flag before starting daemon
+	if *print {
+		for _, loc := range cfg.Locations {
+			alerts, err := weather.ConnectNOAA(client, alertsURL, loc, *debug)
+			if err != nil {
+				fmt.Printf("Error: %v.\n", err)
+				return
+			}
+			matches := weather.FilterAlerts(alerts, loc, cfg.Events)
+			fmt.Printf("--- %s ---\n", loc.Name)
+			weather.PrintMatchingAlerts(matches)
+		}
+		return
+	}
+
 	// Setup signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
@@ -109,62 +124,63 @@ func main() {
 	seen := weather.SeenAlerts{}
 
 	for {
-		// Connect to NWS API to retrieve alerts of type and zone as defined in our config
-		alerts, err := weather.ConnectNOAA(client, alertsURL, cfg, *debug)
-		if err != nil {
-			slog.Error("connect to NOAA failed", "error", err)
-			time.Sleep(60 * time.Second)
-			continue
+		// Iterate over each configured location
+		for _, loc := range cfg.Locations {
+			// Connect to NWS API to retrieve alerts for this location
+			alerts, err := weather.ConnectNOAA(client, alertsURL, loc, *debug)
+			if err != nil {
+				slog.Error("connect to NOAA failed", "error", err, "location", loc.Name)
+				continue
+			}
+
+			// Filter alerts returned for either printing or Pushover
+			matches := weather.FilterAlerts(alerts, loc, cfg.Events)
+
+			// Pushover logic - skip anything already notified about
+			for _, p := range matches {
+				key := loc.Name + "." + weather.VtecKey(p)
+				_, alreadySeen := seen[key]
+				if alreadySeen {
+					continue
+				}
+
+				// Send alerts to Pushover
+				err := weather.SendPushover(client, pushoverURL, apiKey, userKey, loc.Name, p)
+				if err != nil {
+					slog.Error("pushover notification failed", "error", err, "location", loc.Name)
+					continue
+				}
+
+				// Use the event end time if available, as it represents when the weather event actually ends.
+				// p.Expires is when the NWS message version expires (often only a few hours),
+				// while p.Ends is when the actual weather event ends (could be days away).
+				// Falling back to p.Expires if p.Ends is zero (not set) or earlier than p.Expires.
+				seenExpiry := p.Expires
+				if !p.Ends.IsZero() && p.Ends.After(p.Expires) {
+					seenExpiry = p.Ends
+				}
+				seen[key] = seenExpiry
+
+				// Log either the p.Ends or p.Expires time in addition to other information
+				slog.Info("alert sent", "event", p.Event, "location", loc.Name, "headline", p.Headline, "dedup_key", key, "seen_until", seenExpiry)
+
+				// Output the full alert as JSON to stdout for downstream consumers
+				data, err := json.Marshal(p)
+				if err != nil {
+					slog.Error("json marshal failed", "error", err)
+					continue
+				}
+				fmt.Println(string(data))
+			}
 		}
 
-		// Filter alerts returned for either printing or Pushover
-		matches := weather.FilterAlerts(alerts, cfg)
-
-		// Print alerts to console and then end program. Useful for seeing alerts without firing off notifications
+		// Exit after printing all locations
 		if *print {
-			weather.PrintMatchingAlerts(matches)
 			return
 		}
 
 		// Remove alerts for entries that have expired
 		seen = weather.PruneSeenAlerts(seen)
-
-		// Pushover logic - skip anything already notified about
-		for _, p := range matches {
-			key := weather.VtecKey(p)
-			_, alreadySeen := seen[key]
-			if alreadySeen {
-				continue
-			}
-
-			// Send alerts to Pushover
-			err := weather.SendPushover(client, pushoverURL, apiKey, userKey, p)
-			if err != nil {
-				slog.Error("pushover notification failed", "error", err)
-				continue
-			}
-
-			// Use the event end time if available, as it represents when the weather event actually ends.
-			// p.Expires is when the NWS message version expires (often only a few hours),
-			// while p.Ends is when the actual weather event ends (could be days away).
-			// Falling back to p.Expires if p.Ends is zero (not set) or earlier than p.Expires.
-			seenExpiry := p.Expires
-			if !p.Ends.IsZero() && p.Ends.After(p.Expires) {
-				seenExpiry = p.Ends
-			}
-			seen[key] = seenExpiry
-
-			// Log either the p.Ends or p.Expires time in addition to other information
-			slog.Info("alert sent", "event", p.Event, "headline", p.Headline, "dedup_key", key, "seen_until", seenExpiry)
-
-			// Output the full alert as JSON to stdout for downstream consumers
-			data, err := json.Marshal(p)
-			if err != nil {
-				slog.Error("json marshal failed", "error", err)
-				continue
-			}
-			fmt.Println(string(data))
-		}
 
 		time.Sleep(60 * time.Second)
 	}

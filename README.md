@@ -1,6 +1,6 @@
 # weatherwatch
 
-A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in a NWS forecast zone, sending push notifications via [Pushover](https://pushover.net) and structured JSON to stdout when a configured alert type is issued.
+A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in configurable NWS forecast zones sending push notifications via [Pushover](https://pushover.net) and structured JSON to stdout when a configured alert type is issued.
 
 > ⚠️ **Disclaimer:** weatherwatch is a personal learning project intended for educational and recreational use only. It should not be relied upon as a primary source of severe weather alerts or for any life-safety decisions. Always monitor official sources such as the [National Weather Service](https://www.weather.gov), local emergency management agencies, and NOAA Weather Radio for authoritative, real-time severe weather information. The developer makes no guarantees regarding the accuracy, timeliness, or completeness of alerts delivered by this application.
 
@@ -8,12 +8,14 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
 - Outputs the full matched alert as JSON to stdout for every new notification. Suitable for piping into other tools.
-- Filters alerts by user configurable NWS zone/county code and event type (e.g. Tornado Warning, Flash Flood Warning)
+- Monitors one or more locations simultaneously, each with their own NWS zone and county code
+- Filters alerts by user configurable event type (e.g. Tornado Warning, Flash Flood Warning) — shared across all locations
 - Sends push notifications to your phone via Pushover when a new matching alert is found
 - Avoids duplicate notifications for alerts already seen using an in-memory cache with automatic expiration
 - Looks up your NWS zone/county code from a zip code (no need to know them ahead of time)
 - Lists all valid NWS alert event types so you know what events to put in your config
 - Structured logging to stderr, designed to run as a systemd service with automatic log capture via journald
+- Sends a Pushover notification on startup and shutdown so you always know when the daemon is running or has stopped
 
 ## Requirements
  
@@ -43,12 +45,12 @@ export PUSHOVER_USER_KEY="your_user_key_here"
 export WEATHERWATCH_USER_AGENT="weatherwatch (you@example.com)"
 ```
 
-**3. Configure your zone, county, and events**
+**3. Configure your zone, county, and events in the config.toml file**
 
 ```bash
 cp config.example.toml config.toml
-./weatherwatch -zip <your_zip_code>
-./weatherwatch -listevents
+./weatherwatch -zip <your_zip_code> # run once per location you want to monitor
+./weatherwatch -listevents # see all valid event types
 nano config.toml
 ```
 
@@ -79,7 +81,7 @@ go build -o weatherwatch .
 
 ### Pushover Setup
 
-1. Create a free account at [pushover.net](https://pushover.net)
+1. Create a Pushover account at [pushover.net](https://pushover.net)
 2. Your **User Key** is shown on your dashboard after logging in.
 3. Create an **Application** (also from the dashboard) to get an **API Token** — this becomes `PUSHOVER_API_KEY`.
 4. Add these as Environment Variables (instructions below)
@@ -120,25 +122,40 @@ cp config.example.toml config.toml
 `config.toml` fields:
 
 ```toml
-# Two-letter state abbreviation for your location (e.g. FL, AL, GA).
-# Note: weatherwatch is designed for land-based alerts only. NWS marine
-# area codes are not supported.
-area = "CA"
-
-# Your NWS forecast zone code — see "Finding Your Zone" below
-zone = "CAZ368"
-
-# Your NWS forecast county code — see "Finding Your Zone" below
-county = "CAC037"
-
-# Event types to notify on — see "Listing Valid Events" below
+# Event types to notify on — shared across all locations
+# Run with -listevents to see all valid event type strings
 events = [
     "Tornado Warning",
     "Severe Thunderstorm Warning",
     "Flash Flood Warning",
     "Hurricane Warning"
 ]
+
+# Add one [[locations]] block per area you want to monitor
+# Run with -zip <zipcode> to look up your zone and county codes
+# Note: weatherwatch is designed for land-based alerts only.
+# NWS marine area codes are not supported.
+[[locations]]
+name = "Home"
+area = "CA"
+zone = "CAZ368"
+county = "CAC037"
+
+# Add additional locations as needed
+[[locations]]
+name = "Vacation Home"
+area = "AL"
+zone = "ALZ043"
+county = "ALC051"
 ```
+
+| Field | Description |
+|---|---|
+| `events` | List of NWS event type strings to notify on — shared across all locations |
+| `name` | A label for this location — appears in Pushover notification titles e.g. `[Home] Tornado Warning` |
+| `area` | Two-letter state abbreviation (e.g. `FL`, `AL`, `GA`) |
+| `zone` | NWS forecast zone code — run `-zip` to find yours |
+| `county` | NWS county code — run `-zip` to find yours |
 
 ## Finding Your Zone
 
@@ -148,7 +165,9 @@ If you don't know your NWS zone code, run weatherwatch with the `-zip` flag and 
 ./weatherwatch -zip 90210
 ```
 
-This looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone/county codes. You have to add both the zone and county codes to `zone` and `county` fields in `config.toml`.
+Run `-zip` once for each location you want to monitor — each location requires its own zone and county code.  
+
+This feature looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone/county codes. You have to add both the zone and county codes to `zone` and `county` fields in `config.toml`.
 
 > **Note:** zip-code-to-coordinate lookups use the geographic centroid of the zip code's boundary. For zip codes covering narrow areas like barrier islands, this can occasionally resolve to a marine zone instead of land. weatherwatch will warn you if this happens — try another nearby zip code if this happens.
 
@@ -257,7 +276,7 @@ Logged events:
 - Startup/configuration failures
 - Failed connections to the NWS API
 - Failed Pushover notifications
-- Successfully sent notifications (event type, headline, alert ID, event expiration)
+- Successfully sent notifications (event type, location, headline, VTEC dedup key, event expiration)
 
 ## JSON Output
 

@@ -18,7 +18,7 @@ func TestSendPushover(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, "test-api-key", r.FormValue("token"))
 			assert.Equal(t, "test-user-key", r.FormValue("user"))
-			assert.Equal(t, "Tornado Warning issued...", r.FormValue("title"))
+			assert.Equal(t, "[Home] Tornado Warning issued...", r.FormValue("title"))
 
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"status":1,"request":"abc123"}`))
@@ -31,7 +31,7 @@ func TestSendPushover(t *testing.T) {
 			AreaDesc:    "South Walton; Coastal Bay",
 		}
 
-		err := SendPushover(server.Client(), server.URL, "test-api-key", "test-user-key", alert)
+		err := SendPushover(server.Client(), server.URL, "test-api-key", "test-user-key", "Home", alert)
 		assert.NoError(t, err)
 	})
 
@@ -55,7 +55,7 @@ func TestSendPushover(t *testing.T) {
 			AreaDesc:    "Test Area",
 		}
 
-		err := SendPushover(server.Client(), server.URL, "test-api-key", "test-user-key", alert)
+		err := SendPushover(server.Client(), server.URL, "test-api-key", "test-user-key", "Home", alert)
 		assert.NoError(t, err)
 	})
 
@@ -68,7 +68,7 @@ func TestSendPushover(t *testing.T) {
 
 		alert := AlertProperties{Headline: "Test", Description: "test"}
 
-		err := SendPushover(server.Client(), server.URL, "test-api-key", "bad-user-key", alert)
+		err := SendPushover(server.Client(), server.URL, "test-api-key", "bad-user-key", "Home", alert)
 		assert.Error(t, err)
 	})
 
@@ -80,7 +80,7 @@ func TestSendPushover(t *testing.T) {
 
 		alert := AlertProperties{Headline: "Test", Description: "test"}
 
-		err := SendPushover(server.Client(), server.URL, "test-api-key", "test-user-key", alert)
+		err := SendPushover(server.Client(), server.URL, "test-api-key", "test-user-key", "Home", alert)
 		assert.Error(t, err)
 	})
 }

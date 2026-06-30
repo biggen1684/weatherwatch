@@ -11,9 +11,13 @@ import (
 func TestLoadConfig(t *testing.T) {
 	t.Run("valid toml file", func(t *testing.T) {
 		content := `
-zone = "FLZ112"
-area = "FL"
 events = ["Tornado Warning", "Heat Advisory"]
+
+[[locations]]
+name = "Home"
+area = "FL"
+zone = "FLZ112"
+county = "FLC005"
 `
 		path := filepath.Join(t.TempDir(), "config.toml")
 		err := os.WriteFile(path, []byte(content), 0644)
@@ -21,9 +25,39 @@ events = ["Tornado Warning", "Heat Advisory"]
 
 		cfg, err := loadConfig(path)
 		assert.NoError(t, err)
-		assert.Equal(t, "FLZ112", cfg.Zone)
-		assert.Equal(t, "FL", cfg.Area)
+		assert.Len(t, cfg.Locations, 1)
+		assert.Equal(t, "Home", cfg.Locations[0].Name)
+		assert.Equal(t, "FL", cfg.Locations[0].Area)
+		assert.Equal(t, "FLZ112", cfg.Locations[0].Zone)
+		assert.Equal(t, "FLC005", cfg.Locations[0].County)
 		assert.Equal(t, []string{"Tornado Warning", "Heat Advisory"}, cfg.Events)
+	})
+
+	t.Run("multiple locations", func(t *testing.T) {
+		content := `
+events = ["Tornado Warning"]
+
+[[locations]]
+name = "Home"
+area = "FL"
+zone = "FLZ112"
+county = "FLC005"
+
+[[locations]]
+name = "Vacation"
+area = "FL"
+zone = "FLZ108"
+county = "FLC131"
+`
+		path := filepath.Join(t.TempDir(), "config.toml")
+		err := os.WriteFile(path, []byte(content), 0644)
+		assert.NoError(t, err)
+
+		cfg, err := loadConfig(path)
+		assert.NoError(t, err)
+		assert.Len(t, cfg.Locations, 2)
+		assert.Equal(t, "Home", cfg.Locations[0].Name)
+		assert.Equal(t, "Vacation", cfg.Locations[1].Name)
 	})
 
 	t.Run("file does not exist", func(t *testing.T) {
@@ -33,7 +67,7 @@ events = ["Tornado Warning", "Heat Advisory"]
 
 	t.Run("malformed toml", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "bad.toml")
-		err := os.WriteFile(path, []byte("zone = ["), 0644)
+		err := os.WriteFile(path, []byte("locations = ["), 0644)
 		assert.NoError(t, err)
 
 		_, err = loadConfig(path)
@@ -43,8 +77,9 @@ events = ["Tornado Warning", "Heat Advisory"]
 
 func TestValidateConfig(t *testing.T) {
 	valid := Config{
-		Zone:   "FLZ112",
-		Area:   "FL",
+		Locations: []Location{
+			{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005"},
+		},
 		Events: []string{"Tornado Warning"},
 	}
 
@@ -53,9 +88,53 @@ func TestValidateConfig(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("missing area", func(t *testing.T) {
+	t.Run("no locations", func(t *testing.T) {
 		cfg := valid
-		cfg.Area = ""
+		cfg.Locations = nil
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
+	t.Run("missing location name", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "", Area: "FL", Zone: "FLZ112", County: "FLC005"},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
+	t.Run("missing area", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "", Zone: "FLZ112", County: "FLC005"},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
+	t.Run("missing zone", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "", County: "FLC005"},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
+	t.Run("missing county", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: ""},
+			},
+			Events: []string{"Tornado Warning"},
+		}
 		err := validateConfig(cfg)
 		assert.Error(t, err)
 	})
@@ -67,10 +146,15 @@ func TestValidateConfig(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("missing zone", func(t *testing.T) {
-		cfg := valid
-		cfg.Zone = ""
+	t.Run("valid config with multiple locations", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005"},
+				{Name: "Vacation", Area: "FL", Zone: "FLZ108", County: "FLC131"},
+			},
+			Events: []string{"Tornado Warning"},
+		}
 		err := validateConfig(cfg)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	})
 }
