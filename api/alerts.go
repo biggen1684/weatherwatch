@@ -20,6 +20,7 @@ type AlertResponse struct {
 }
 
 type Feature struct {
+	Geometry   *Geometry       `json:"geometry"`
 	Properties AlertProperties `json:"properties"`
 }
 
@@ -40,6 +41,7 @@ type AlertProperties struct {
 	Instruction string          `json:"instruction"`
 	Geocode     Geocode         `json:"geocode"`
 	Parameters  AlertParameters `json:"parameters"`
+	Geometry    *Geometry       `json:"geometry,omitempty"`
 }
 
 type AlertParameters struct {
@@ -53,6 +55,12 @@ type Geocode struct {
 // Struct to hold alerts types from NWS
 type AlertTypesResponse struct {
 	EventTypes []string `json:"eventTypes"`
+}
+
+// Struct to hold polygon geometry NWS sends
+type Geometry struct {
+	Type        string        `json:"type"`
+	Coordinates [][][]float64 `json:"coordinates"`
 }
 
 // Print all valid alerts types from NWS if -listevents flag is passed in
@@ -161,19 +169,31 @@ func ConnectNOAA(client *http.Client, alertsURL string, loc Location, debug bool
 	return alerts, nil
 }
 
-// FilterAlerts returns alerts matching the configured location zone/county and events
+// FilterAlerts returns alerts matching the configured location zone/county and events.
+// Geometry from the parent Feature is attached to each matching alert so it is
+// available in the JSON stdout output for downstream consumers and future
+// polygon-based filtering.
 func FilterAlerts(alerts AlertResponse, loc Location, events []string) []AlertProperties {
 	var matches []AlertProperties
 	for _, f := range alerts.Features {
+		// Assign geometry from the parent Feature to the alert properties so it
+		// flows through to JSON output. Will be nil for zone-based alerts like
+		// Heat Advisories and Tornado Watches which don't include polygon data.
 		p := f.Properties
+		p.Geometry = f.Geometry
+
+		// Check if this alert covers our configured zone or county
 		zoneMatch := slices.Contains(p.Geocode.UGC, loc.Zone)
 		countyMatch := slices.Contains(p.Geocode.UGC, loc.County)
 		if !zoneMatch && !countyMatch {
 			continue
 		}
+
+		// Check if this alert's event type is in our configured events list
 		if !slices.Contains(events, p.Event) {
 			continue
 		}
+
 		matches = append(matches, p)
 	}
 	return matches
