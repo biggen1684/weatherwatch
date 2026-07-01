@@ -9,30 +9,30 @@ import (
 	"path"
 )
 
-// Runs four functions to retrieve NWS Zone if -zip flag is sent in
-func LookupZone(client *http.Client, zipURL string, pointsURL string, zip string, debug bool) (string, string, error) {
+// Runs four functions to retrieve NWS Zone, County, Lat, and Lon if -zip flag is sent in
+func LookupZone(client *http.Client, zipURL string, pointsURL string, zip string, debug bool) (string, string, string, string, error) {
 
 	// getUserAgent() is located in env.go
 	userAgent, err := getUserAgent()
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
 
 	err = validateZip(zip)
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
 
 	lat, lon, err := zipToLatLon(client, zipURL, zip, debug)
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
 
 	zone, county, err := latLonToZone(client, pointsURL, userAgent, lat, lon, debug)
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
-	return zone, county, nil
+	return zone, county, lat, lon, nil
 }
 
 // Structs to hold returned NWS zone
