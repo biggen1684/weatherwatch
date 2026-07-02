@@ -8,10 +8,12 @@ import (
 
 // Location holds the configuration for a single NWS forecast zone to monitor
 type Location struct {
-	Name   string `toml:"name"`
-	Area   string `toml:"area"`
-	Zone   string `toml:"zone"`
-	County string `toml:"county"`
+	Name   string  `toml:"name"`
+	Area   string  `toml:"area"`
+	Zone   string  `toml:"zone"`
+	County string  `toml:"county"`
+	Lat    float64 `toml:"lat"`
+	Lon    float64 `toml:"lon"`
 }
 
 // Config holds all configuration settings loaded from config.toml

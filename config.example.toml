@@ -4,15 +4,18 @@ events = [
     "Beach Hazards Statement", "Coastal Flood Advisory", "Coastal Flood Statement"]
 
 # Add one [[locations]] block per area you want to monitor
-# Run with -zip to find your zone and county codes
+# Run with -zip to find your NWS zone/county codes and lat/lon
 [[locations]]
 name = "Home"
 area = "CA"
 zone = "CAZ368"
 county = "CAC037"
+lat = 34.0901   # optional — enables polygon-based filtering for more precise alerts
+lon = -118.4065  # optional — enables polygon-based filtering for more precise alerts
 
 [[locations]]
 name = "Vacation Home"
 area = "AL"
 zone = "ALZ043"
 county = "ALC051"
+# lat and lon omitted — falls back to zone/county matching only

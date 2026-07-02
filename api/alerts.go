@@ -194,6 +194,15 @@ func FilterAlerts(alerts AlertResponse, loc Location, events []string) []AlertPr
 			continue
 		}
 
+		// If the alert has a geometry polygon and the location has lat/lon configured,
+		// check if the location falls within the polygon's bounding box.
+		// Falls back to zone/county matching alone if either is absent.
+		if p.Geometry != nil && loc.Lat != 0 && loc.Lon != 0 {
+			if !pointInBoundingBox(loc.Lat, loc.Lon, p.Geometry.Coordinates[0]) {
+				continue
+			}
+		}
+
 		matches = append(matches, p)
 	}
 	return matches
@@ -272,4 +281,35 @@ func ShouldNotify(seen SeenAlerts, key string, incomingExpiry time.Time) bool {
 		return false
 	}
 	return true
+}
+
+// pointInBoundingBox checks if a lat/lon coordinate falls within the bounding
+// box of a GeoJSON polygon. Used to filter alerts to only those whose polygon
+// overlaps the user's configured location. Note: GeoJSON coordinates are
+// [longitude, latitude] order
+func pointInBoundingBox(lat float64, lon float64, coordinates [][]float64) bool {
+	if len(coordinates) == 0 {
+		return false
+	}
+	minLat := coordinates[0][1]
+	maxLat := coordinates[0][1]
+	minLon := coordinates[0][0]
+	maxLon := coordinates[0][0]
+
+	for _, coord := range coordinates {
+		if coord[1] < minLat {
+			minLat = coord[1]
+		}
+		if coord[1] > maxLat {
+			maxLat = coord[1]
+		}
+		if coord[0] < minLon {
+			minLon = coord[0]
+		}
+		if coord[0] > maxLon {
+			maxLon = coord[0]
+		}
+	}
+
+	return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon
 }

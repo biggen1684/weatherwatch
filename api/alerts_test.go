@@ -227,3 +227,54 @@ func TestShouldNotify(t *testing.T) {
 		assert.True(t, ShouldNotify(seen, "Home.KTAE.TO.W.0001", future))
 	})
 }
+
+func TestPointInBoundingBox(t *testing.T) {
+	// Polygon roughly covering Panama City Beach area
+	coordinates := [][]float64{
+		{-86.00, 30.27},
+		{-85.99, 30.39},
+		{-85.96, 30.44},
+		{-85.90, 30.44},
+		{-85.86, 30.50},
+		{-85.52, 30.34},
+		{-85.51, 29.96},
+		{-86.00, 30.27},
+	}
+
+	t.Run("point inside bounding box", func(t *testing.T) {
+		// Panama City Beach roughly 30.19, -85.81 — inside the polygon above
+		result := pointInBoundingBox(30.19, -85.81, coordinates)
+		assert.True(t, result)
+	})
+
+	t.Run("point outside bounding box to the north", func(t *testing.T) {
+		result := pointInBoundingBox(31.00, -85.81, coordinates)
+		assert.False(t, result)
+	})
+
+	t.Run("point outside bounding box to the south", func(t *testing.T) {
+		result := pointInBoundingBox(29.00, -85.81, coordinates)
+		assert.False(t, result)
+	})
+
+	t.Run("point outside bounding box to the east", func(t *testing.T) {
+		result := pointInBoundingBox(30.19, -84.00, coordinates)
+		assert.False(t, result)
+	})
+
+	t.Run("point outside bounding box to the west", func(t *testing.T) {
+		result := pointInBoundingBox(30.19, -87.00, coordinates)
+		assert.False(t, result)
+	})
+
+	t.Run("point on bounding box edge", func(t *testing.T) {
+		// Exactly on the minimum lat boundary
+		result := pointInBoundingBox(29.96, -85.81, coordinates)
+		assert.True(t, result)
+	})
+
+	t.Run("no geometry coordinates returns false", func(t *testing.T) {
+		result := pointInBoundingBox(30.19, -85.81, [][]float64{})
+		assert.False(t, result)
+	})
+}

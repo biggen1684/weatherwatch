@@ -8,21 +8,33 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
 - Outputs the full matched alert as JSON to stdout for every new notification. Suitable for piping into other tools
-- Monitors one or more locations simultaneously, each with their own NWS zone and county code
+- Monitors one or more locations simultaneously, each with their own NWS zone/county code and lat/lon
+- Optionally filters alerts by NWS polygon geometry when `lat`/`lon` are configured, falling back to zone/county matching for alerts without polygon data
 - Filters alerts by user configurable event type (e.g. Tornado Warning, Flash Flood Warning) — shared across all locations
 - Sends push notifications to your device via Pushover when a new matching alert is found
-- Avoids duplicate notifications for alerts already seen (except for extended alerts) using an in-memory cache with automatic expiration
-- Re-notifies if an active alert's expiration time is extended by NWS — ensuring you're always aware of the latest alert duration
-- Looks up your NWS zone/county code from a zip code (no need to know them ahead of time)
+- Avoids duplicate notifications using an in-memory cache — re-notifies only if NWS extends an active alert's expiry time
+- Looks up your NWS zone/county code and lat/lon from a zip code (no need to know them ahead of time)
 - Lists all valid NWS alert event types so you know what events to put in your config
 - Structured logging to stderr, designed to run as a systemd service with automatic log capture via journald
 - Sends a Pushover notification on startup and shutdown so you always know when the daemon is running or has stopped
 
+### Alert Filtering Logic
+
+weatherwatch filters alerts using the following logic depending on whether the NWS alert includes polygon geometry and whether `lat`/`lon` are configured in the `config.toml` file.  NWS does not always send out polygon geometry with their alerts. This depends upon the alert issued.  
+
+| Alert has geometry | Location has `lat`/`lon` | Result |
+|---|---|---|
+| No | No | Notify if zone/county matches |
+| No | Yes | Notify if zone/county matches |
+| Yes | No | Notify if zone/county matches |
+| Yes | Yes | Notify only if coordinates fall within polygon bounding box |
+
+Zone/county matching is always the first filter — if your zone or county code isn't in the alert's list, the alert is skipped regardless of geometry. Polygon filtering is an additional precision filter applied on top of zone/county matching when both geometry and coordinates are available.  Configuring `lat` and `lon` is recommended for more precise alerting. Without `lat` and `lon` coordinates, weatherwatch notifies for any alert covering your entire zone or county — which can be large geographic areas. With coordinates, alerts are filtered to only those whose polygon actually covers your specific location, reducing notifications for storms or events that are in your county but far from you.
+
 ## Requirements
- 
+
 - Linux (binaries are built and tested for Linux only)
-- A [Pushover](https://pushover.net) account
-- A Pushover Application Token and User Key (see [Pushover setup](#pushover-setup) below)
+- A [Pushover](https://pushover.net) account (see [Pushover setup](#pushover-setup) below)
 
 ## Quick Setup
 
@@ -46,7 +58,7 @@ export PUSHOVER_USER_KEY="your_user_key_here"
 export WEATHERWATCH_USER_AGENT="weatherwatch (you@example.com)"
 ```
 
-**3. Configure your zone, county, and events in the config.toml file**
+**3. Configure your zone, county, and events in the config.toml file (lat/lon are optional)**
 
 ```bash
 cp config.example.toml config.toml
@@ -68,7 +80,7 @@ nano config.toml
  
 Download the latest Linux binary from the [Releases](https://github.com/biggen1684/weatherwatch/releases) page.
  
-> **Note:** weatherwatch is currently only tested and distributed for Linux. It relies on environment variables for configuration secrets and Windows handles these differently (`setx` or the System Properties GUI rather than `export`). Windows support hasn't been tested — building from source on Windows may work, but isn't guaranteed.
+> **Note:** weatherwatch is currently only tested and distributed for Linux. It relies on environment variables for configuration secrets and Windows handles these differently (`setx` or the System Properties GUI rather than `export`). Windows support hasn't been tested — building from source on Windows probably works fine, but isn't guaranteed.
 
 ### Build from source
  
@@ -86,7 +98,7 @@ go build -o weatherwatch .
 2. Your **User Key** is shown on your dashboard after logging in.
 3. Create an **Application** (also from the dashboard) to get an **API Token** — this becomes `PUSHOVER_API_KEY`.
 4. Add these as Environment Variables (instructions below)
-5. Run with `-test` flag to check if test Pushover alerts was successfully sent.
+5. Run with the `-test` flag to verify your Pushover keys are configured correctly.
 
 ### Environment Variables
 
@@ -121,7 +133,6 @@ cp config.example.toml config.toml
 ```
 
 `config.toml` fields:
-
 ```toml
 # Event types to notify on — shared across all locations
 # Run with -listevents to see all valid event type strings
@@ -133,14 +144,17 @@ events = [
 ]
 
 # Add one [[locations]] block per area you want to monitor
-# Run with -zip <zipcode> to look up your zone and county codes
-# Note: weatherwatch is designed for land-based alerts only.
-# NWS marine area codes are not supported.
+# You must add at least one [[locations]] block
+# Run with -zip <zipcode> to look up your zone, county, and lat/lon
+# Note: weatherwatch is designed for land-based alerts only
+# NWS marine area codes are not supported
 [[locations]]
 name = "Home"
 area = "CA"
 zone = "CAZ368"
 county = "CAC037"
+lat = 34.0901   # optional — enables polygon-based filtering for more precise alerts
+lon = -118.4065  # optional — enables polygon-based filtering for more precise alerts
 
 # Add additional locations as needed
 [[locations]]
@@ -148,6 +162,7 @@ name = "Vacation Home"
 area = "AL"
 zone = "ALZ043"
 county = "ALC051"
+# lat and lon omitted — falls back to zone/county matching only
 ```
 
 | Field | Description |
@@ -157,18 +172,20 @@ county = "ALC051"
 | `area` | Two-letter state abbreviation (e.g. `FL`, `AL`, `GA`) |
 | `zone` | NWS forecast zone code — run `-zip` to find yours |
 | `county` | NWS county code — run `-zip` to find yours |
+| `lat` | *(optional)* Latitude of your location — run `-zip` to find yours. Enables polygon-based filtering when combined with `lon`.  Should give more precision for alerting. |
+| `lon` | *(optional)* Longitude of your location — run `-zip` to find yours. Enables polygon-based filtering when combined with `lat`.  Should give more precision for alerting. |
 
 ## Finding Your Zone
 
-If you don't know your NWS zone code, run weatherwatch with the `-zip` flag and your zip code:
+If you don't know your NWS zone/county code or lat/lon, run weatherwatch with the `-zip` flag and your zip code:
 
 ```bash
 ./weatherwatch -zip 90210
 ```
 
-Run `-zip` once for each location you want to monitor — each location requires its own zone and county code.  
+Run `-zip` once for each location you want to monitor — each location requires its own zone and county code while lat/lon is optional.
 
-This feature looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone/county codes. You have to add both the zone and county codes to `zone` and `county` fields in `config.toml`.
+This feature looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone/county codes along with your lat/lon. You have to add both the zone and county codes to `zone` and `county` fields in `config.toml`. Lat/lon is optional but should give more precision for alerts that are closer to your location.
 
 > **Note:** zip-code-to-coordinate lookups use the geographic centroid of the zip code's boundary. For zip codes covering narrow areas like barrier islands, this can occasionally resolve to a marine zone instead of land. weatherwatch will warn you if this happens — try another nearby zip code if this happens.
 
@@ -184,23 +201,23 @@ Copy whichever event names are relevant to you into the `events` array in `confi
 
 ## Usage
 
-### Normal operation (manual mode - good for testing deployment)
+### Running manually
 
 ```bash
 ./weatherwatch
 ```
 
-Runs continuously, polling NWS every 60 seconds, sending Pushover notifications for new matching alerts. Designed to run in the background — see [Running Long-Term](#running-long-term) below.
+Runs continuously, polling NWS every 60 seconds and sending Pushover notifications for new matching alerts. Use Ctrl-C to stop.
 
 ### Flags
 
 | Flag | Description |
 |---|---|
-| `-zip <zipcode>` | Look up your NWS zone/county codes from a zip code, then exit |
+| `-zip <zipcode>` | Look up your NWS zone/county codes and lat/lon from a zip code then exit |
 | `-listevents` | Print all valid NWS alert event type strings, then exit |
 | `-print` | Fetch alerts, print any matching your config, then exit (no notifications sent) |
 | `-debug` | Print raw API responses for troubleshooting |
-| `-test` | Sends test message to Pushover to determine if API and User keys are setup correctly |
+| `-test` | Send a test Pushover notification to verify your API and User keys are configured correctly, then exit |
 
 `-zip`, `-listevents`, `-print`, and `-test` are one-shot utility commands — none of them start the long-running daemon loop.
 
@@ -208,9 +225,9 @@ Runs continuously, polling NWS every 60 seconds, sending Pushover notifications 
 
 weatherwatch is designed to run continuously. Since it's a single process holding state in memory (which alerts have already been notified about), it needs to keep running rather than being re-invoked periodically via cron or manually.
 
-A few options, in increasing order of robustness:
+A few options in increasing order of robustness:
 
-**`screen` or `tmux`** — good for quick/manual use on a machine you're logged into directly. Needs `screen` installed:
+A. **`screen` or `tmux`** — good for quick/manual use on a machine you're logged into directly. Needs `screen` installed:
 
 ```bash
 screen -S weatherwatch
@@ -218,14 +235,14 @@ screen -S weatherwatch
 # Ctrl+A then d to detach — output continues to accumulate in the screen buffer
 ```
 
-**`nohup`** — survives terminal closure, doesn't survive a reboot:
+B. **`nohup`** — survives terminal closure, doesn't survive a reboot:
 
 ```bash
 nohup ./weatherwatch &
 # nohup redirects stdout to nohup.out by default
 ```
 
-**`systemd`** (recommended for long-term/unattended use) — survives reboots and restarts automatically on crash. A service file is included as `weatherwatch.service`.
+C. **`systemd` (recommended for long-term/unattended use)** — survives reboots and restarts automatically on crash. A service file is included as `weatherwatch.service`.
 
 1. Edit the paths and username in `weatherwatch.service` to match your deployment
 
@@ -282,7 +299,7 @@ Logged events:
 
 ## JSON Output
 
-For every new (non-duplicate) matching alert, weatherwatch writes the full alert object as a single line of JSON to stdout, alongside sending the Pushover notification. This makes it easy to pipe weatherwatch's output into other tools:
+For every new (non-duplicate) matching alert, weatherwatch writes the full alert object as a single line of JSON to stdout, alongside sending the Pushover notification.  When available, the NWS alert polygon geometry is also included in the JSON output. This feature makes it easy to pipe weatherwatch's output into other tools:
 
 ```bash
 ./weatherwatch | jq '.headline'
@@ -303,7 +320,6 @@ weatherwatch/
 ├── main.go                # Entry point, flag parsing, daemon loop
 ├── config.example.toml    # Template config — copy to config.toml
 ├── weatherwatch.service   # systemd service file
-├── weatherwatch_flow.svg  # Program flowchart (see Logic Flow below)
 ├── LICENSE                # MIT
 └── api/                   # weather package
     ├── config.go           # Config struct, loading, validation
