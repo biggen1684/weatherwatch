@@ -77,6 +77,12 @@ func validateConfig(cfg Config) error {
 		if loc.County == "" {
 			return fmt.Errorf("location %d (%s) is missing county", i+1, loc.Name)
 		}
+		if loc.Lat != 0 && loc.Lon == 0 {
+			return fmt.Errorf("location %d (%s) has lat configured but lon is missing", i+1, loc.Name)
+		}
+		if loc.Lon != 0 && loc.Lat == 0 {
+			return fmt.Errorf("location %d (%s) has lon configured but lat is missing", i+1, loc.Name)
+		}
 	}
 	if len(cfg.Events) == 0 {
 		return fmt.Errorf("events is missing from config.toml — add at least one event type")

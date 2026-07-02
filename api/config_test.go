@@ -157,4 +157,47 @@ func TestValidateConfig(t *testing.T) {
 		err := validateConfig(cfg)
 		assert.NoError(t, err)
 	})
+	t.Run("lat without lon returns error", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005", Lat: 30.19},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
+	t.Run("lon without lat returns error", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005", Lon: -85.81},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
+	t.Run("both lat and lon configured is valid", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005", Lat: 30.19, Lon: -85.81},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.NoError(t, err)
+	})
+
+	t.Run("neither lat nor lon configured is valid", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005"},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.NoError(t, err)
+	})
 }

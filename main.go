@@ -85,6 +85,15 @@ func main() {
 		return
 	}
 
+	// Log each configured location and its precision mode
+	for _, loc := range cfg.Locations {
+		if loc.Lat != 0 && loc.Lon != 0 {
+			slog.Info("location configured", "name", loc.Name, "zone", loc.Zone, "county", loc.County, "precision", "polygon")
+		} else {
+			slog.Info("location configured", "name", loc.Name, "zone", loc.Zone, "county", loc.County, "precision", "zone/county")
+		}
+	}
+
 	// Handle -print flag before starting daemon
 	if *print {
 		for _, loc := range cfg.Locations {

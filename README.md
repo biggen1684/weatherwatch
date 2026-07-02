@@ -292,6 +292,7 @@ When run directly or under `screen`/`nohup`, both streams appear interleaved in 
 Logged events:
 
 - Startup/configuration failures
+- Location configuration summary on startup (name, zone, county, and precision mode — polygon or zone/county)
 - Failed connections to the NWS API
 - Failed Pushover notifications
 - Successfully sent notifications (event type, location, headline, VTEC dedup key, event expiration)
