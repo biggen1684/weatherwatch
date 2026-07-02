@@ -200,4 +200,17 @@ func TestValidateConfig(t *testing.T) {
 		err := validateConfig(cfg)
 		assert.NoError(t, err)
 	})
+
+	t.Run("duplicate location names returns error", func(t *testing.T) {
+		cfg := Config{
+			Locations: []Location{
+				{Name: "Home", Area: "FL", Zone: "FLZ112", County: "FLC005"},
+				{Name: "Home", Area: "AL", Zone: "ALZ043", County: "ALC051"},
+			},
+			Events: []string{"Tornado Warning"},
+		}
+		err := validateConfig(cfg)
+		assert.Error(t, err)
+	})
+
 }

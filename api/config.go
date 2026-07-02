@@ -59,15 +59,20 @@ func loadConfig(path string) (Config, error) {
 	return cfg, nil
 }
 
-// validateConfig checks that all required fields are present
 func validateConfig(cfg Config) error {
 	if len(cfg.Locations) == 0 {
 		return fmt.Errorf("no locations defined in config.toml — add at least one [[locations]] block")
 	}
+
+	seen := make(map[string]bool)
 	for i, loc := range cfg.Locations {
 		if loc.Name == "" {
 			return fmt.Errorf("location %d is missing a name", i+1)
 		}
+		if seen[loc.Name] {
+			return fmt.Errorf("location %d has duplicate name %q — each location must have a unique name", i+1, loc.Name)
+		}
+		seen[loc.Name] = true
 		if loc.Area == "" {
 			return fmt.Errorf("location %d (%s) is missing area", i+1, loc.Name)
 		}
@@ -84,6 +89,7 @@ func validateConfig(cfg Config) error {
 			return fmt.Errorf("location %d (%s) has lon configured but lat is missing", i+1, loc.Name)
 		}
 	}
+
 	if len(cfg.Events) == 0 {
 		return fmt.Errorf("events is missing from config.toml — add at least one event type")
 	}
