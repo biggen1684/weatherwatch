@@ -8,8 +8,8 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 
 - Polls `api.weather.gov` for active alerts at 60 second intervals
 - Outputs the full matched alert as JSON to stdout for every new notification. Suitable for piping into other tools
-- Monitors one or more locations simultaneously, each with their own NWS zone/county code and lat/lon
-- Optionally filters alerts by NWS polygon geometry when `lat`/`lon` are configured, falling back to zone/county matching for alerts without polygon data
+- Monitors one or more locations simultaneously each with their own NWS zone/county code and lat/lon
+- Optionally filters alerts by NWS polygon geometry when lat/lon are configured, falling back to zone/county matching for alerts without polygon data
 - Filters alerts by user configurable event type (e.g. Tornado Warning, Flash Flood Warning) — shared across all locations
 - Sends push notifications to your device via Pushover when a new matching alert is found
 - Avoids duplicate notifications using an in-memory cache — re-notifies only if NWS extends an active alert's expiry time
