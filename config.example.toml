@@ -1,10 +1,14 @@
-# Run with "-listevents" to see all NWS events available 
-# Events are shared between all locations
+# Event types to notify on — shared across all locations
+# Run with -listevents to see all valid event type strings
+# Note: weatherwatch is designed for land-based alerts only
+# NWS marine area codes are not supported
 events = [
     "Beach Hazards Statement", "Coastal Flood Advisory", "Coastal Flood Statement"]
 
 # Add one [[locations]] block per area you want to monitor
-# Run with -zip to find your NWS zone/county codes and lat/lon
+# You must add at least one [[locations]] block
+# Run with -zip <zipcode> to look up your zone, county, and lat/lon
+# name must be unique per location block
 [[locations]]
 name = "Home"
 area = "CA"

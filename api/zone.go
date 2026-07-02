@@ -76,8 +76,8 @@ func latLonToZone(client *http.Client, pointsURL string, userAgent string, lat s
 	}
 
 	// Return any error messages the API sends
-	if res.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("API error %d: %s", res.StatusCode, string(body))
+	if res.StatusCode == http.StatusNotFound {
+		return "", "", fmt.Errorf("NWS does not have coverage for the coordinates returned by this zip code — try a different zip code\n%s", string(body))
 	}
 
 	// Finally unmarshal into a slice containing the struct declared above

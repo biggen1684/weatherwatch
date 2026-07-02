@@ -151,6 +151,8 @@ cp config.example.toml config.toml
 ```toml
 # Event types to notify on — shared across all locations
 # Run with -listevents to see all valid event type strings
+# Note: weatherwatch is designed for land-based alerts only
+# NWS marine area codes are not supported
 events = [
     "Tornado Warning",
     "Severe Thunderstorm Warning",
@@ -161,8 +163,7 @@ events = [
 # Add one [[locations]] block per area you want to monitor
 # You must add at least one [[locations]] block
 # Run with -zip <zipcode> to look up your zone, county, and lat/lon
-# Note: weatherwatch is designed for land-based alerts only
-# NWS marine area codes are not supported
+# name must be unique per location block
 [[locations]]
 name = "Home"
 area = "CA"
@@ -201,6 +202,8 @@ If you don't know your NWS zone/county code or lat/lon, run weatherwatch with th
 Run `-zip` once for each location you want to monitor — each location requires its own zone and county code while lat/lon is optional.
 
 This feature looks up the latitude/longitude for that zip, queries the NWS API, and prints your zone/county codes along with your lat/lon. You have to add both the zone and county codes to `zone` and `county` fields in `config.toml`. Lat/lon is optional but should give more precision for alerts that are closer to your location.
+
+`-zip` only supports zip codes for the 50 US states. US territories such as Puerto Rico, Guam, and the US Virgin Islands are not supported. Users in these areas would need to look up their NWS zone and county codes manually from the [NWS website](https://www.weather.gov) and enter them directly into `config.toml`.
 
 > **Note:** zip-code-to-coordinate lookups use the geographic centroid of the zip code's boundary. For zip codes covering narrow areas like barrier islands, this can occasionally resolve to a marine zone instead of land. weatherwatch will warn you if this happens — try another nearby zip code if this happens.
 
