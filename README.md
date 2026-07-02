@@ -18,9 +18,24 @@ A command-line daemon that polls the National Weather Service (NWS) API for acti
 - Structured logging to stderr, designed to run as a systemd service with automatic log capture via journald
 - Sends a Pushover notification on startup and shutdown so you always know when the daemon is running or has stopped
 
+### NWS Alerting Primer
+
+The NWS alert system works at the zone and county level. When NWS issues an alert, they assign it to one or more forecast zones or county codes covering the affected area.  These are called UGC (Universal Geographic Code). Each code represents a specific forecast zone or county, formatted as a two-letter state abbreviation followed by a letter indicating the type (`Z` for forecast zone, `C` for county) and a three-digit number. For example, an alert for zip code 90210 would include these UGC codes:
+
+- `CAZ368` — California (`CA`), forecast zone (`Z`), zone number `368` (Santa Monica Mountains)
+- `CAC037` — California (`CA`), county (`C`), county FIPS code `037` (Los Angeles County)
+
+> Note that NWS alerts don't consistently use one type of code.  Some alerts use forecast zone codes, others use county codes, and some include both. This is why weatherwatch requires both a zone and county code in your config to check for either as a match.
+
+These geographic areas can be large — a watch may cover dozens of counties across multiple states, while a warning typically covers one or two counties.  Warnings are generally issued with storm polygon information indicating the size of the storm but the actual storm polygon may only affect a small portion of that area. For example, a Severe Thunderstorm Warning for a storm in the northern part of a county will still list the entire county in its UGC list, meaning anyone monitoring that county code would receive the alert even if the storm is 50 miles from their location.  However, the polygon data included with the same alert will give a precise position of the storm within the county/zone that is affected.  
+
+weatherwatch with polygon filtering bridges the gap between getting alerts for the entire affected zone and only getting alerts when your configured `lat`/`lon` coordinates fall within the alert polygon.  In the above example, if you had configured `lat` and `lon` for your location, weatherwatch would only have notified you if your coordinates fell inside the storm polygon and not just because the storm was somewhere in your county.  This cuts down on notifications for storm or events that are not near your location.  
+
+Not all alerts include polygon geometry — broad condition alerts like Heat Advisories, Tornado Watches, and Extreme Heat Warnings cover entire zones by nature and never include a polygon. For these alerts, weatherwatch always falls back to zone/county matching regardless of whether `lat`/`lon` are configured.
+
 ### Alert Filtering Logic
 
-weatherwatch filters alerts using the following logic depending on whether the NWS alert includes polygon geometry and whether `lat`/`lon` are configured in the `config.toml` file.  NWS does not always send out polygon geometry with their alerts. This depends upon the alert issued.  
+weatherwatch filters alerts using the following logic depending on whether the NWS alert includes polygon geometry and whether `lat`/`lon` are configured in the `config.toml` file.  Again, NWS does not always include polygon geometry with their alerts — storm-based warnings typically do, while watches and broad condition advisories typically do not.
 
 | Alert has geometry | Location has `lat`/`lon` | Result |
 |---|---|---|
