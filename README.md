@@ -1,6 +1,6 @@
 <div align="center">
   <img src="weatherwatch_logo.svg" width="500"/>
-</div
+</div>
 
 # weatherwatch
 
