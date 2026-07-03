@@ -19,6 +19,9 @@ const zipURL = "https://api.zippopotam.us/us/"
 const pointsURL = "https://api.weather.gov/points/"
 const pushoverURL = "https://api.pushover.net/1/messages.json"
 
+// Version variable
+var version = "dev"
+
 func main() {
 
 	// Setup logger for output of errors to stderr
@@ -33,8 +36,15 @@ func main() {
 	listevents := flag.Bool("listevents", false, "List all valid NWS alert event types")
 	debug := flag.Bool("debug", false, "Print raw API responses for troubleshooting")
 	print := flag.Bool("print", false, "Print alerts matching your configured zone and events then exit")
-	test := flag.Bool("test", false, "Checks Pushover settings are valid.")
+	test := flag.Bool("test", false, "Checks Pushover settings are valid")
+	versionFlag := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
+
+	// Show version and exit
+	if *versionFlag {
+		fmt.Println("weatherwatch", version)
+		return
+	}
 
 	// Test pushover api and user keys for connectivity
 	if *test {
@@ -136,11 +146,36 @@ func main() {
 	// Brief pause to allow startup notification to deliver before first poll
 	time.Sleep(2 * time.Second)
 
+	// Heartbeat ticker setup
+	startTime := time.Now()
+	alertsSent := 0
+	heartbeat := time.NewTicker(1 * time.Hour)
+	defer heartbeat.Stop()
+
 	// Declare empty variable here pre-loop to set and compare later
 	seen := weather.SeenAlerts{}
 
+	// Heartbeat logging setup with desired items to log at startup
+	slog.Info("heartbeat",
+		"uptime", time.Since(startTime).Round(time.Minute).String(),
+		"alerts_sent", alertsSent,
+		"seen_map_size", len(seen),
+		"locations", len(cfg.Locations))
+
 	// Main daemon loop
 	for {
+
+		// Log heartbeat every hour
+		select {
+		case <-heartbeat.C:
+			slog.Info("heartbeat",
+				"uptime", time.Since(startTime).Round(time.Minute).String(),
+				"alerts_sent", alertsSent,
+				"seen_map_size", len(seen),
+				"locations", len(cfg.Locations))
+		default:
+		}
+
 		// Iterate over each configured location
 		for _, loc := range cfg.Locations {
 			// Connect to NWS API to retrieve alerts for this location
@@ -172,6 +207,9 @@ func main() {
 					slog.Error("pushover notification failed", "error", err, "location", loc.Name)
 					continue
 				}
+
+				// Update alertsSent var count for heartbeat logging
+				alertsSent++
 
 				// Update seen map with the latest known end time for this alert
 				seen[key] = incomingExpiry
