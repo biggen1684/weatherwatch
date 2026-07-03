@@ -1,0 +1,72 @@
+<svg width="100%" viewBox="0 0 680 400" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>weatherwatch logo</title>
+<desc>A stylized logo featuring a radar sweep watching storm clouds with a lightning bolt, text reads weatherwatch</desc>
+
+<style>
+  @media (prefers-color-scheme: dark) {
+    .bg-ring { stroke: #1e3a5f; }
+    .sweep { fill: #0d2340; }
+    .cloud-main { fill: #2a3a52; }
+    .cloud-dark { fill: #1a2a42; }
+    .logo-text { fill: #e8f0fe; }
+    .sub-text { fill: #7a9bc4; }
+    .ring-line { stroke: #1e3a5f; }
+    .outer-ring { stroke: #4a90d9; }
+  }
+  @media (prefers-color-scheme: light) {
+    .bg-ring { stroke: #c8daf5; }
+    .sweep { fill: #ddeeff; }
+    .cloud-main { fill: #c5d8f0; }
+    .cloud-dark { fill: #a8c0e0; }
+    .logo-text { fill: #0d2340; }
+    .sub-text { fill: #4a6a94; }
+    .ring-line { stroke: #c8daf5; }
+    .outer-ring { stroke: #4a90d9; }
+  }
+</style>
+
+<!-- radar rings -->
+<circle cx="200" cy="200" r="155" fill="none" class="bg-ring" stroke-width="1"/>
+<circle cx="200" cy="200" r="115" fill="none" class="bg-ring" stroke-width="1"/>
+<circle cx="200" cy="200" r="75" fill="none" class="bg-ring" stroke-width="1"/>
+<circle cx="200" cy="200" r="35" fill="none" class="bg-ring" stroke-width="1"/>
+
+<!-- horizontal line -->
+<line x1="45" y1="200" x2="355" y2="200" class="ring-line" stroke-width="0.5"/>
+<!-- bottom vertical line only -->
+<line x1="200" y1="200" x2="200" y2="355" class="ring-line" stroke-width="0.5"/>
+
+<!-- radar sweep wedge -->
+<path d="M200,200 L200,45 A155,155 0 0,1 340,270 Z" class="sweep" opacity="0.5"/>
+
+<!-- sweep trailing edge line -->
+<line x1="200" y1="200" x2="340" y2="270" stroke="#4a90d9" stroke-width="2" opacity="0.8"/>
+
+<!-- storm cloud -->
+<ellipse cx="200" cy="178" rx="65" ry="32" class="cloud-main"/>
+<ellipse cx="165" cy="188" rx="40" ry="26" class="cloud-main"/>
+<ellipse cx="235" cy="185" rx="45" ry="24" class="cloud-main"/>
+<ellipse cx="200" cy="195" rx="68" ry="22" class="cloud-dark"/>
+
+<!-- cloud highlight bumps -->
+<ellipse cx="178" cy="163" rx="28" ry="20" class="cloud-main"/>
+<ellipse cx="215" cy="158" rx="32" ry="22" class="cloud-main"/>
+<ellipse cx="248" cy="168" rx="22" ry="16" class="cloud-main"/>
+
+<!-- lightning bolt -->
+<polygon points="208,195 196,222 204,222 192,252 220,215 210,215 222,195" fill="#f5c842"/>
+
+<!-- radar dot at center -->
+<circle cx="200" cy="200" r="4" fill="#4a90d9"/>
+
+<!-- outer circle frame -->
+<circle cx="200" cy="200" r="155" fill="none" class="outer-ring" stroke-width="2"/>
+
+<!-- text -->
+<text x="390" y="175" font-family="system-ui, sans-serif" font-size="52" font-weight="700" class="logo-text" letter-spacing="-1">weather</text>
+<text x="390" y="235" font-family="system-ui, sans-serif" font-size="52" font-weight="700" fill="#4a90d9" letter-spacing="-1">watch</text>
+<text x="393" y="268" font-family="system-ui, sans-serif" font-size="16" font-weight="400" class="sub-text" letter-spacing="2">NWS ALERT DAEMON</text>
+
+<!-- divider line -->
+<line x1="390" y1="248" x2="622" y2="248" stroke="#4a90d9" stroke-width="1" opacity="0.4"/>
+</svg>
