@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="weatherwatch_logo.svg" width="500"/>
+</div
+
 # weatherwatch
 
 A command-line daemon that polls the National Weather Service (NWS) API for active severe weather alerts in configurable NWS forecast zones sending push notifications via [Pushover](https://pushover.net) and structured JSON to stdout when a configured alert type is issued.
@@ -351,4 +355,8 @@ weatherwatch/
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.
+
+Copyright © 2026 biggen1684
+
+> The weatherwatch logo is not covered by the MIT license and may not be reproduced without permission.
