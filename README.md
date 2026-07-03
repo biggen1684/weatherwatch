@@ -240,8 +240,9 @@ Runs continuously, polling NWS every 60 seconds and sending Pushover notificatio
 | `-print` | Fetch alerts, print any matching your config, then exit (no notifications sent) |
 | `-debug` | Print raw API responses for troubleshooting |
 | `-test` | Send a test Pushover notification to verify your API and User keys are configured correctly, then exit |
+| `-version` | Print the build version and exit |
 
-`-zip`, `-listevents`, `-print`, and `-test` are one-shot utility commands — none of them start the long-running daemon loop.
+`-zip`, `-listevents`, `-print`, `-test`, and `-version` are one-shot utility commands — none of them start the long-running daemon loop.
 
 ### Running Long-Term
 
@@ -319,6 +320,7 @@ Logged events:
 - Failed Pushover notifications
 - Successfully sent notifications (event type, location, headline, VTEC dedup key, event expiration)
 - Re-notifications when NWS extends an active alert's expiry (logged with updated `seen_until` value)
+- Heartbeat every hour (uptime, total alerts sent, seen map size, configured locations)
 
 ## JSON Output
 
