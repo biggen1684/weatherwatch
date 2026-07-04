@@ -19,7 +19,7 @@ const zipURL = "https://api.zippopotam.us/us/"
 const pointsURL = "https://api.weather.gov/points/"
 const pushoverURL = "https://api.pushover.net/1/messages.json"
 
-// Version variable
+// overridden at build time: -ldflags "-X main.version=vX.X.X"
 var version = "dev"
 
 func main() {

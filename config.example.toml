@@ -7,7 +7,7 @@ events = [
 # Run with -zip <zipcode> to look up your zone, county, and lat/lon
 # name must be unique — zone/county must be land-based (not marine) NWS codes
 # Marine zone/county prefixes (not supported): AM AN GM LC LE LH LM LO LS PH PK PM PS PZ
-# If your zone/county have these two letters as the prefix, they are likely marine zones/county codes
+# If your zone/county have these two letters as the prefix, they are likely marine zones/county codes and can't be used
 [[locations]]
 name = "Home"
 area = "CA"

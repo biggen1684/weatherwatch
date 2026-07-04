@@ -31,11 +31,11 @@ The NWS alert system works at the zone and county level. When NWS issues an aler
 
 > Note that NWS alerts don't consistently use one type of code.  Some alerts use forecast zone codes, others use county codes, and some include both. This is why weatherwatch requires both a zone and county code in your config to check for either as a match.
 
-These geographic areas can be large — a watch may cover dozens of counties across multiple states, while a warning typically covers one or two counties.  Warnings are generally issued with storm polygon information indicating the size of the storm but the actual storm polygon may only affect a small portion of that area. For example, a Severe Thunderstorm Warning for a storm in the northern part of a county will still list the entire county in its UGC list, meaning anyone monitoring that county code would receive the alert even if the storm is 50 miles from their location.  However, the polygon data included with the same alert will give a precise position of the storm within the county/zone that is affected.  
+These geographic areas can be large — a watch may cover dozens of counties across multiple states, while a warning typically covers one or two counties.  Warnings are generally issued with storm polygon information indicating the size of the storm but the actual storm polygon may only affect a small portion of that area. For example, a Severe Thunderstorm Warning for a storm in the northern part of a county will still list the entire county in its UGC list, meaning anyone monitoring that county code would receive the alert even if the storm is dozens of miles from their location.  However, the polygon data included with the same alert will give a precise position of the storm within the county/zone that is affected.  
 
-weatherwatch with polygon filtering bridges the gap between getting alerts for the entire affected zone and only getting alerts when your configured `lat`/`lon` coordinates fall within the alert polygon.  In the above example, if you had configured `lat` and `lon` for your location, weatherwatch would only have notified you if your coordinates fell inside the storm polygon and not just because the storm was somewhere in your county.  This cuts down on notifications for storm or events that are not near your location.  
+weatherwatch with polygon filtering bridges the gap between getting alerts for the entire affected zone and only getting alerts when your configured `lat`/`lon` coordinates fall within the alert polygon.  In the above example, if you had configured `lat` and `lon` for your location, weatherwatch would only have notified you if your coordinates fell inside the storm polygon and not just because the storm was somewhere in your zone/county.  This cuts down on notifications for storm or events that are not near your location.  
 
-Not all alerts include polygon geometry — broad condition alerts like Heat Advisories, Tornado Watches, and Extreme Heat Warnings cover entire zones by nature and never include a polygon. For these alerts, weatherwatch always falls back to zone/county matching regardless of whether `lat`/`lon` are configured.
+Not all alerts include polygon geometry.  Alerts that don't include polygon geometry are broad condition alerts like Heat Advisories, Tornado Watches, Fog Statements, etc... These cover entire zones by nature and never include a polygon. For these alerts, weatherwatch always falls back to zone/county matching regardless of whether `lat`/`lon` are configured.
 
 ### Alert Filtering Logic
 
@@ -155,8 +155,6 @@ cp config.example.toml config.toml
 ```toml
 # Event types to notify on — shared across all locations
 # Run with -listevents to see all valid event type strings
-# Note: weatherwatch is designed for land-based alerts only
-# NWS marine area codes are not supported
 events = [
     "Tornado Warning",
     "Severe Thunderstorm Warning",
@@ -164,10 +162,11 @@ events = [
     "Hurricane Warning"
 ]
 
-# Add one [[locations]] block per area you want to monitor
-# You must add at least one [[locations]] block
+# Add one [[locations]] block per area you want to monitor (at least one required)
 # Run with -zip <zipcode> to look up your zone, county, and lat/lon
-# name must be unique per location block
+# name must be unique — zone/county must be land-based (not marine) NWS codes
+# Marine zone/county prefixes (not supported): AM AN GM LC LE LH LM LO LS PH PK PM PS PZ
+# If your zone/county have these two letters as the prefix, they are likely marine zones/county codes and can't be used
 [[locations]]
 name = "Home"
 area = "CA"
