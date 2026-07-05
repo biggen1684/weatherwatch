@@ -293,10 +293,12 @@ C. **`systemd` (recommended for long-term/unattended use)** — survives reboots
 3. Install and start the service:
 
 ```bash
-   sudo cp weatherwatch.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now weatherwatch
+sudo cp weatherwatch.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now weatherwatch
 ```
+
+> **Note:** The service file assumes the deployed binary is named `weatherwatch`. If you downloaded a versioned release binary (e.g. `weatherwatch-v0.2.1-linux-amd64`), rename it to `weatherwatch` before deploying.
 
 4. Check status and logs:
 
